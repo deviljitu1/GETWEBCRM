@@ -19,13 +19,13 @@ async function access({user = {id:'member'},org = {id:'org',status:'active'},mem
   const stubs={'server-only':{},react:{cache:fn=>fn},'next/navigation':navigation,'utils/supabase/server':{createClient:async()=>client},'./validation':validation};
   const source=await readFile(new URL('../src/utils/crm/access.ts',import.meta.url),'utf8');
   const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-  const module=new SourceTextModule(compiled);
-  await module.link(specifier=>{
+  const accessModule=new SourceTextModule(compiled);
+  await accessModule.link(specifier=>{
     const stub=stubs[specifier]; if(!stub) throw new Error(`Unexpected dependency: ${specifier}`);
     return new SyntheticModule(Object.keys(stub),function(){for(const [name,value] of Object.entries(stub))this.setExport(name,value);});
   });
-  await module.evaluate();
-  return module.namespace;
+  await accessModule.evaluate();
+  return accessModule.namespace;
 }
 test('unauthenticated requests redirect to the workspace login',async()=>{
   const dal=await access({user:null});await assert.rejects(dal.requireOrg('tenant-a'),/REDIRECT:\/tenant-a\/login/);
