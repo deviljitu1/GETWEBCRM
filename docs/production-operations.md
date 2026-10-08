@@ -12,9 +12,13 @@ Register and verify the intended administrator's account first. From a trusted S
 
 Invitations expire after seven days. Share the workspace login URL with the invited person; verified sign-in accepts pending invitations. Invitations do not send emails automatically. Disabled memberships are never reactivated by accepting an invitation.
 
+Migration 00006 adds team access controls. Workspace settings can update non-owner roles, disable/reactivate members, and revoke pending invitations. Own access and owner roles cannot be changed through this flow. Disabling membership immediately removes access through RLS without deleting leads.
+
 ## Authentication redirects
 
 Set Supabase Authentication → URL Configuration → Site URL to the current production origin (`https://getwebcrm.vercel.app`). Add `https://getwebcrm.vercel.app/auth/callback` and any intended local development callback to the redirect allow list. Google Cloud's authorized redirect URI is the Supabase project's `/auth/v1/callback` URL. Keep preview callbacks limited to project domains you control.
+
+Configure production SMTP and verify account confirmation and password recovery delivery. Add `https://getwebcrm.vercel.app/auth/recovery` to the callback allow list. `/auth/forgot-password` requests a rate-limited recovery link; the same browser must exchange its PKCE code. Authenticated users can set a CRM password at `/auth/password`. Verify these flows with a test mailbox before customer onboarding.
 
 ## Release checks
 

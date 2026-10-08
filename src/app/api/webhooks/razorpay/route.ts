@@ -12,6 +12,7 @@ export async function POST(request: Request) {
   if (!validWebhookSignature(raw, request.headers.get('x-razorpay-signature'), secret)) return new Response('Invalid signature', { status: 401 });
   let event;
   try { event = JSON.parse(raw); } catch { return new Response('Invalid payload', { status: 400 }); }
+  if (!event || typeof event !== 'object') return new Response('Invalid payload', { status: 400 });
   if (typeof event.event !== 'string' || !event.event.startsWith('subscription.')) return Response.json({ received: true });
   const id = event.payload?.subscription?.entity?.id;
   if (typeof id !== 'string' || !/^sub_[A-Za-z0-9]+$/.test(id)) return new Response('Invalid subscription', { status: 400 });

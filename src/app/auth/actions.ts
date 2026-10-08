@@ -56,3 +56,32 @@ export async function signOut(form: FormData) {
   if (result.error) throw new Error('Unable to sign out. Please try again.');
   redirect(scope === 'admin' ? '/admin/login' : validSlug(scope) ? `/${scope}/login` : '/login');
 }
+
+export async function requestPasswordReset(_state: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const address = email(text(form,'email',254,true),true);
+    const requestHeaders = await headers();
+    await rateLimit(`reset:email:${address}`,3,3600);
+    await rateLimit(`reset:ip:${requestHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'}`,10,3600);
+    const origin = process.env.NEXT_PUBLIC_SITE_URL;
+    if (!origin) throw new Error('Password recovery is unavailable. Contact support.');
+    const supabase = await createClient();
+    const result = await supabase.auth.resetPasswordForEmail(address,{redirectTo:new URL('/auth/recovery',origin).toString()});
+    if (result.error) return { error:'Unable to send recovery email. Try again later or sign in with Google.' };
+    return { message:'If this email has an account, a recovery link will arrive shortly. Check your spam folder.' };
+  } catch (error) { return { error:error instanceof Error ? error.message : 'Unable to request recovery' }; }
+}
+export async function changePassword(_state: ActionState, form: FormData): Promise<ActionState> {
+  const supabase = await createClient();
+  const {data:{user},error:authError} = await supabase.auth.getUser();
+  if (authError || !user) return { error:'Sign in or open a valid recovery link before changing your password.' };
+  try {
+    await rateLimit(`password:${user.id}`,5,3600);
+    const password = form.get('password'), confirmation = form.get('confirmation');
+    if (typeof password !== 'string' || password.length < 12 || password.length > 128) return {error:'Use a password between 12 and 128 characters'};
+    if (password !== confirmation) return {error:'Passwords do not match'};
+    const result = await supabase.auth.updateUser({password});
+    if (result.error) return {error:'Unable to change your password. Sign in again or request a fresh recovery link.'};
+    return {message:'Your CRM password has been updated.'};
+  } catch (error) { return {error:error instanceof Error ? error.message : 'Unable to change password'}; }
+}

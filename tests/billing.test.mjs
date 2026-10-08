@@ -54,6 +54,7 @@ test('oversized and malformed signed webhook payloads are rejected', async () =>
   const post=await webhook(async()=>assert.fail('must not sync'));
   assert.equal((await post(request('x'.repeat(65537)))).status,413);
   assert.equal((await post(request('{broken'))).status,400);
+  assert.equal((await post(request('null'))).status,400);
   assert.equal((await post(request(JSON.stringify({event:'subscription.charged',payload:{}})))).status,400);
   delete process.env.RAZORPAY_WEBHOOK_SECRET;
 });

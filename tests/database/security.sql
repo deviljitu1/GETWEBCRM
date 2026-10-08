@@ -96,6 +96,22 @@ DO $$ BEGIN
 END $$;
 
 SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+DO $$ DECLARE viewer_member uuid; viewer_role uuid; owner_role uuid; BEGIN
+  SELECT id INTO viewer_member FROM public.organization_members WHERE user_id='33333333-3333-4333-8333-333333333333' AND organization_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  SELECT id INTO viewer_role FROM public.roles WHERE organization_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' AND key='viewer';
+  SELECT id INTO owner_role FROM public.roles WHERE organization_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' AND key='owner';
+  BEGIN
+    PERFORM public.manage_member('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',viewer_member,owner_role,'active');
+    RAISE EXCEPTION 'Owner promotion allowed' USING ERRCODE='XX000';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  PERFORM public.manage_member('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',viewer_member,viewer_role,'disabled');
+END $$;
+SELECT set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',true);
+DO $$ BEGIN
+  IF public.is_org_member('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') OR EXISTS(SELECT 1 FROM public.leads) THEN RAISE EXCEPTION 'Disabled member retained access'; END IF;
+END $$;
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+SELECT public.manage_member('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',m.id,r.id,'active') FROM public.organization_members m JOIN public.roles r ON r.organization_id=m.organization_id AND r.key='viewer' WHERE m.user_id='33333333-3333-4333-8333-333333333333';
 INSERT INTO public.organization_invitations(organization_id,email,role_id)
 SELECT 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','rls-invite@example.invalid',id FROM public.roles WHERE organization_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' AND key = 'viewer';
 SELECT set_config('request.jwt.claim.sub','77777777-7777-4777-8777-777777777777',true);

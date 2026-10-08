@@ -123,3 +123,19 @@ export async function inviteMember(slug: string, _state: ActionState, form: Form
     dbError(result.error); return `Invitation saved for 7 days. Share /${slug}/login with this person. They must verify the invited email before access is granted.`;
   });
 }
+export async function manageMember(slug: string, id: string, _state: ActionState, form: FormData) {
+  const context = await requireOrg(slug,'settings.manage');
+  return save(context,async()=>{
+    const status = text(form,'status',20,true);
+    if (!['active','disabled'].includes(status)) throw new Error('Invalid member status');
+    const result = await context.supabase.rpc('manage_member',{org_id:context.org.id,member_id:uuid(id),new_role:uuid(text(form,'role_id',36,true)),new_status:status});
+    dbError(result.error); return 'Team access updated';
+  });
+}
+export async function revokeInvitation(slug: string, id: string, _state: ActionState) {
+  const context = await requireOrg(slug,'settings.manage');
+  return save(context,async()=>{
+    const result = await context.supabase.rpc('revoke_invitation',{org_id:context.org.id,invitation_id:uuid(id)});
+    dbError(result.error); return 'Invitation revoked';
+  });
+}

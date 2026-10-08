@@ -39,7 +39,7 @@ export async function updateSession(request: NextRequest) {
 
   // Basic route protection
   // If user is not logged in and trying to access a protected route
-  const publicRoute = pathname === '/' || pathname === '/login' || pathname === '/auth/callback' ||
+  const publicRoute = pathname === '/' || pathname === '/login' || ['/auth/callback','/auth/recovery','/auth/forgot-password','/auth/password'].includes(pathname) ||
     /^\/(?:admin|[a-z0-9]+(?:-[a-z0-9]+)*)\/login$/.test(pathname) || pathname.startsWith('/api/');
   if (!user && !publicRoute) {
     // Redirect to login page of the current orgSlug if present, else generic login
