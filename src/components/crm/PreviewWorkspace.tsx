@@ -1,5 +1,8 @@
 'use client';
 import { useState } from 'react';
+import { signOut } from 'app/auth/actions';
+import { createWorkspace } from 'app/workspaces/actions';
+import ActionForm, { Submit } from './ActionForm';
 import {
   MdAdd,
   MdApartment,
@@ -9,7 +12,12 @@ import {
   MdLockOutline,
   MdPeople,
   MdSearch,
+  MdBusiness,
+  MdMenu,
+  MdLogout,
 } from 'react-icons/md';
+
+type Plan = { name: string; price_monthly: number; currency_code: string } | null;
 
 const sampleLeads = [
   { name: 'Aarav Sharma', interest: '3 BHK · Naya Raipur', stage: 'Qualified' },
@@ -17,11 +25,12 @@ const sampleLeads = [
   { name: 'Rohan Patel', interest: 'Villa · Mowa', stage: 'Site visit' },
 ];
 
-export default function PreviewWorkspace({ email }: { email?: string | null }) {
+export default function PreviewWorkspace({ email, plan }: { email?: string | null; plan: Plan }) {
   const [tab, setTab] = useState<'dashboard' | 'leads' | 'inventory'>(
     'dashboard',
   );
   const [subscribe, setSubscribe] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const request = () => setSubscribe(true);
   const tabs = [
     { key: 'dashboard' as const, name: 'Dashboard', icon: MdDashboard },
@@ -29,46 +38,42 @@ export default function PreviewWorkspace({ email }: { email?: string | null }) {
     { key: 'inventory' as const, name: 'Inventory', icon: MdApartment },
   ];
   return (
-    <main className="min-h-screen bg-[#f5f7ff] p-4 text-navy-700 dark:bg-navy-900 dark:text-white sm:p-7">
-      <div className="mx-auto grid max-w-7xl gap-5 xl:grid-cols-[235px_minmax(0,1fr)]">
-        <aside className="rounded-[24px] bg-gradient-to-b from-navy-800 to-brand-700 p-5 text-white shadow-xl">
-          <p className="text-xl font-bold">
-            GET<span className="text-amber-300">WEB</span>CRM
-          </p>
-          <p className="mt-4 rounded-xl bg-white/10 p-3 text-xs text-white/80">
-            Preview workspace
-            <br />
-            <span className="mt-1 block truncate font-medium text-white">
-              {email || 'New user'}
-            </span>
-          </p>
-          <nav className="mt-7 flex gap-2 overflow-x-auto xl:flex-col">
+    <main className="min-h-screen bg-background-100 text-navy-700 dark:bg-background-900 dark:text-white">
+      <aside className={`fixed left-0 top-0 z-40 flex h-dvh flex-col overflow-hidden bg-white pb-5 shadow-2xl transition-all duration-300 dark:bg-navy-800 ${collapsed ? 'w-20' : 'w-[288px] max-md:w-20'}`}>
+        <button onClick={() => setCollapsed(!collapsed)} className="absolute -right-3 top-6 flex h-7 w-7 items-center justify-center rounded-full bg-brand-500 text-white shadow-md" aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}><MdMenu /></button>
+        <div className="mt-12 flex items-center justify-center text-[26px] font-bold uppercase">
+          {collapsed ? 'GW' : <>GETWEB<span className="font-medium text-[#C9A24A]">CRM</span></>}
+        </div>
+        <div className="mx-7 mt-12 h-px bg-gray-200 dark:bg-white/20" />
+        <nav className="mt-5 space-y-1 px-3">
             {tabs.map((item) => {
               const Icon = item.icon;
               return (
                 <button
                   key={item.key}
                   onClick={() => setTab(item.key)}
-                  className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-left text-sm font-semibold transition-colors ${
+                  title={collapsed ? item.name : undefined}
+                  className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-4 text-left text-sm font-semibold transition-colors ${
                     tab === item.key
-                      ? 'bg-white text-brand-600 shadow-lg'
-                      : 'text-white/80 hover:bg-white/10 hover:text-white'
+                      ? 'bg-brand-50 text-brand-600 dark:bg-brand-500/10'
+                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-navy-700'
                   }`}
                 >
                   <Icon className="text-lg" />
-                  {item.name}
+                  {!collapsed && item.name}
                 </button>
               );
             })}
-          </nav>
-          <button
-            onClick={request}
-            className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-brand-600 shadow-lg transition-transform hover:-translate-y-0.5"
-          >
-            <MdLockOutline /> Subscribe to unlock
-          </button>
-        </aside>
-        <div className="min-w-0">
+          <button onClick={request} title={collapsed ? 'Subscribe to unlock' : undefined} className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3 text-sm font-bold text-white hover:bg-brand-600"><MdLockOutline /> {!collapsed && 'Subscribe'}</button>
+        </nav>
+        <div className="mt-auto px-3">
+          {!collapsed && <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wide text-gray-400">Account</p>}
+          <button onClick={request} title={collapsed ? 'Business details' : undefined} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-4 text-left text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-navy-700"><MdBusiness className="text-lg" /> {!collapsed && 'Business details'}</button>
+          <form action={signOut}><input type="hidden" name="scope" value="login" /><button title={collapsed ? 'Sign out' : undefined} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-4 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-navy-700"><MdLogout className="text-lg" /> {!collapsed && 'Sign out'}</button></form>
+        </div>
+      </aside>
+      <div className={`min-h-screen transition-all duration-300 ${collapsed ? 'pl-20' : 'pl-[288px] max-md:pl-20'}`}>
+        <div className="min-w-0 p-4 sm:p-7">
           <header className="flex flex-col gap-4 rounded-2xl border border-white bg-white/90 p-4 shadow-sm backdrop-blur dark:border-navy-700 dark:bg-navy-800 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-500">
@@ -284,19 +289,16 @@ export default function PreviewWorkspace({ email }: { email?: string | null }) {
                 <MdClose />
               </button>
             </div>
-            <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">
-              Your subscription unlocks lead creation, inventory management,
-              team controls and all workspace actions.
-            </p>
-            <button
-              onClick={() => setSubscribe(false)}
-              className="mt-6 w-full rounded-xl bg-brand-500 px-4 py-3 text-sm font-semibold text-white"
-            >
-              Choose a subscription
-            </button>
-            <p className="mt-3 text-center text-xs text-gray-500">
-              A workspace administrator can also invite you to an existing CRM.
-            </p>
+            <p className="mt-3 text-sm text-gray-600 dark:text-gray-300">Create your business workspace first. You will then see the exact monthly plan and continue securely to Razorpay.</p>
+            {plan ? <div className="mt-5 rounded-xl bg-brand-50 p-4 dark:bg-brand-500/10"><p className="font-semibold">{plan.name}</p><p className="mt-1 text-sm text-gray-600 dark:text-gray-300">₹{Number(plan.price_monthly).toLocaleString('en-IN')} / month · billed through Razorpay</p></div> : <p className="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">The monthly plan is being prepared. You can create your workspace and subscribe once it is available.</p>}
+            <ActionForm action={createWorkspace} className="mt-5">
+              <input className="w-full rounded-xl border border-gray-200 p-3 dark:border-navy-600 dark:bg-navy-900" name="name" placeholder="Business / workspace name" maxLength={160} required />
+              <input className="w-full rounded-xl border border-gray-200 p-3 dark:border-navy-600 dark:bg-navy-900" name="slug" placeholder="Workspace URL, e.g. acme-realty" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxLength={80} required />
+              <input className="w-full rounded-xl border border-gray-200 p-3 dark:border-navy-600 dark:bg-navy-900" name="email" type="email" defaultValue={email || ''} placeholder="Business email" maxLength={254} required />
+              <input className="w-full rounded-xl border border-gray-200 p-3 dark:border-navy-600 dark:bg-navy-900" name="phone" type="tel" placeholder="Business phone (optional)" maxLength={40} />
+              <input className="w-full rounded-xl border border-gray-200 p-3 dark:border-navy-600 dark:bg-navy-900" name="legal_name" placeholder="Legal business name (optional)" maxLength={160} />
+              <Submit>Create workspace and view plan</Submit>
+            </ActionForm>
           </section>
         </div>
       )}

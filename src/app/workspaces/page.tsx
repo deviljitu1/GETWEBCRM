@@ -4,6 +4,7 @@ import { createClient } from 'utils/supabase/server';
 import { checkQuery } from 'utils/crm/access';
 import { signOut } from 'app/auth/actions';
 import PreviewWorkspace from 'components/crm/PreviewWorkspace';
+import { getMonthlyPlan } from 'utils/billing/catalog';
 
 export default async function Page() {
   const supabase = await createClient();
@@ -32,7 +33,7 @@ export default async function Page() {
     : { data: [], error: null };
   checkQuery(organizations.error);
   if (!organizations.data?.length)
-    return <PreviewWorkspace email={user.email} />;
+    return <PreviewWorkspace email={user.email} plan={await getMonthlyPlan()} />;
   return (
     <main className="min-h-screen bg-background-100 px-5 py-16 text-navy-700 dark:bg-navy-900 dark:text-white">
       <div className="mx-auto max-w-xl">
