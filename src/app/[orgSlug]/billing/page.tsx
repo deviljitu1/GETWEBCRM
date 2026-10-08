@@ -16,11 +16,7 @@ export default async function Billing({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
-  const { supabase, org, permissions } = await requireOrg(
-    orgSlug,
-    undefined,
-    true,
-  );
+  const { supabase, org, permissions } = await requireOrg(orgSlug);
   if (!permissions.has('settings.manage'))
     return (
       <div className={cardClass}>

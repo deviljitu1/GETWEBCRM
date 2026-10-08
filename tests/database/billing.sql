@@ -13,7 +13,7 @@ INSERT INTO public.billing_settings VALUES ('cccccccc-cccc-4ccc-8ccc-ccccccccccc
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','88888888-8888-4888-8888-888888888888',true);
 DO $$ BEGIN
-  IF public.billing_access('cccccccc-cccc-4ccc-8ccc-cccccccccccc') OR EXISTS(SELECT 1 FROM public.leads) THEN RAISE EXCEPTION 'Unpaid CRM access'; END IF;
+  IF public.billing_access('cccccccc-cccc-4ccc-8ccc-cccccccccccc') OR NOT EXISTS(SELECT 1 FROM public.leads) THEN RAISE EXCEPTION 'Unpaid read access'; END IF;
   IF NOT public.has_org_permission('cccccccc-cccc-4ccc-8ccc-cccccccccccc','settings.manage') THEN RAISE EXCEPTION 'Billing manager locked out'; END IF;
   BEGIN
     PERFORM public.begin_billing_sync('sub_Test'); RAISE EXCEPTION 'User can synchronize payments' USING ERRCODE='XX000';
@@ -21,6 +21,10 @@ DO $$ BEGIN
   BEGIN
     INSERT INTO public.billing_settings VALUES ('cccccccc-cccc-4ccc-8ccc-cccccccccccc',false);
     RAISE EXCEPTION 'Owner bypassed enforcement' USING ERRCODE='XX000';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+  BEGIN
+    UPDATE public.leads SET full_name='Blocked write' WHERE organization_id='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+    RAISE EXCEPTION 'Unpaid owner write allowed' USING ERRCODE='XX000';
   EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
 RESET ROLE;
@@ -49,7 +53,11 @@ RESET ROLE;
 UPDATE public.billing_contracts SET paid_until=now()-interval '1 day' WHERE provider_id='sub_Test';
 SET LOCAL ROLE authenticated;
 DO $$ BEGIN
-  IF EXISTS(SELECT 1 FROM public.leads) THEN RAISE EXCEPTION 'Expired subscription retained access'; END IF;
+  IF NOT EXISTS(SELECT 1 FROM public.leads) THEN RAISE EXCEPTION 'Expired subscription lost read access'; END IF;
+  BEGIN
+    UPDATE public.leads SET full_name='Blocked write' WHERE organization_id='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+    RAISE EXCEPTION 'Expired owner write allowed' USING ERRCODE='XX000';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
 END $$;
 RESET ROLE;
 ROLLBACK;

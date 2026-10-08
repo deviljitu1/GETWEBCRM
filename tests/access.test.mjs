@@ -50,9 +50,10 @@ test('platform access requires a verified platform role',async()=>{
   const rejected=await access({admin:false});await assert.rejects(rejected.requirePlatformAdmin(),/NOT_FOUND/);
   const accepted=await access({admin:true});assert.equal((await accepted.requirePlatformAdmin()).user.id,'member');
 });
-test('unpaid members are routed to billing while billing and settings remain reachable',async()=>{
+test('unpaid members retain read-only workspace access while writes are rejected',async()=>{
   const dal=await access({paidAccess:false,permissions:['leads.create','settings.manage']});
-  await assert.rejects(dal.requireOrg('tenant-a','leads.create'),/REDIRECT:\/tenant-a\/billing/);
-  assert.equal((await dal.requireOrg('tenant-a',undefined,true)).org.id,'org');
+  const context=await dal.requireOrg('tenant-a','leads.create');
+  assert.equal(context.org.id,'org'); assert.equal(context.canWrite,false);
+  await assert.rejects(dal.requireWriteOrg('tenant-a','leads.create'),/read-only/);
   assert.equal((await dal.requireOrg('tenant-a','settings.manage')).org.id,'org');
 });

@@ -23,7 +23,7 @@ async function actions({ existing = null, remotePlan = providerPlan, denied = fa
     'next/navigation': { redirect: url => { throw new Error(`Redirect:${url}`); } },
     'utils/crm/access': {
       requirePlatformAdmin: async () => { if (denied) throw new Error('Unauthorized'); return { supabase, user: { id: 'admin' } }; },
-      requireOrg: async (slug, permission, billingPage) => { assert.equal(permission, 'settings.manage'); assert.equal(billingPage, true); if (denied) throw new Error('Unauthorized'); return { supabase, user: { id: 'owner' }, org: { id: organizationId } }; },
+      requireOrg: async (slug, permission) => { assert.equal(permission, 'settings.manage'); if (denied) throw new Error('Unauthorized'); return { supabase, user: { id: 'owner' }, org: { id: organizationId } }; },
     },
     'utils/billing/catalog': { getMonthlyPlan: async () => ({ ...localPlan, id: planId }) },
     'utils/supabase/admin': { createAdminClient: () => ({ ...supabase, rpc: async (name, args) => { saved.push({ name, args }); return { error: null }; } }) },

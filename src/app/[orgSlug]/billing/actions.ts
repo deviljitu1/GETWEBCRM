@@ -16,7 +16,7 @@ export async function startSubscription(
   slug: string,
   _state: ActionState,
 ): Promise<ActionState> {
-  const { user, org } = await requireOrg(slug, 'settings.manage', true);
+  const { user, org } = await requireOrg(slug, 'settings.manage');
   let checkout: string;
   try {
     await rateLimit(`billing:subscribe:${user.id}`, 3, 60);
