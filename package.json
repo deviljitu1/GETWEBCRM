@@ -24,6 +24,7 @@
     "apexcharts": "^3.35.2",
     "framer-motion": "^7.10.2",
     "next": "^16.0.0",
+    "next-nprogress-bar": "^2.4.7",
     "next-transpile-modules": "^9.0.0",
     "react": "^19.2.0",
     "react-apexcharts": "^1.4.0",
