@@ -8,6 +8,9 @@ export default async function Page() {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) redirect('/login');
+  const admin = await supabase.rpc('is_platform_admin');
+  checkQuery(admin.error);
+  if (admin.data === true) redirect('/admin');
   const memberships = await supabase.from('organization_members').select('organization_id')
     .eq('user_id', user.id).eq('status', 'active');
   checkQuery(memberships.error);
@@ -15,16 +18,13 @@ export default async function Page() {
   const organizations = ids.length ? await supabase.from('organizations').select('id,name,slug')
     .in('id', ids).eq('status', 'active').order('name') : { data: [], error: null };
   checkQuery(organizations.error);
-  const admin = await supabase.rpc('is_platform_admin');
-  checkQuery(admin.error);
   return <main className="min-h-screen bg-background-100 px-5 py-16 text-navy-700 dark:bg-navy-900 dark:text-white">
     <div className="mx-auto max-w-xl">
       <h1 className="text-3xl font-bold">Your workspaces</h1>
       <p className="mt-3 text-gray-500">Choose the client workspace you want to open.</p>
       <div className="mt-8 space-y-3">
         {(organizations.data || []).map(org => <Link key={org.id} href={`/${org.slug}/dashboard`} className="block rounded-xl bg-white p-5 font-medium shadow-sm dark:bg-navy-800">{org.name}</Link>)}
-        {admin.data === true && <Link href="/admin" className="block rounded-xl bg-white p-5 font-medium shadow-sm dark:bg-navy-800">Platform administration</Link>}
-        {!organizations.data?.length && admin.data !== true && <p role="status" className="rounded-xl bg-white p-5 dark:bg-navy-800">You do not have access to a workspace yet. Ask your workspace administrator to invite the email address you used to sign in.</p>}
+        {!organizations.data?.length && <p role="status" className="rounded-xl bg-white p-5 dark:bg-navy-800">You do not have access to a workspace yet. Ask your workspace administrator to invite the email address you used to sign in.</p>}
       </div>
       <form action={signOut} className="mt-8"><input type="hidden" name="scope" value="login" /><button className="text-sm font-medium text-brand-500">Sign out</button></form>
     </div>

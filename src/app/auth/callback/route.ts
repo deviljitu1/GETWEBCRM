@@ -13,7 +13,10 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       const accepted = await supabase.rpc('accept_pending_invitations')
-      if (!accepted.error) return NextResponse.redirect(new URL(next, origin))
+      if (!accepted.error) {
+        const admin = await supabase.rpc('is_platform_admin')
+        if (!admin.error) return NextResponse.redirect(new URL(admin.data === true ? '/admin' : next, origin))
+      }
     }
   }
 

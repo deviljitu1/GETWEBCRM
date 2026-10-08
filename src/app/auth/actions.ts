@@ -10,6 +10,7 @@ export async function authenticate(scope: string, signup: boolean, _state: Actio
   if (scope !== 'admin' && scope !== 'login' && !validSlug(scope)) return { error: 'Invalid workspace' };
   if (scope === 'admin' && signup) return { error: 'Platform registration is restricted' };
   const supabase = await createClient();
+  let destination = scope === 'admin' ? '/admin' : scope === 'login' ? '/workspaces' : `/${scope}/dashboard`;
   try {
     const address = email(text(form, 'email', 254, true), true);
     const password = form.get('password');
@@ -31,9 +32,11 @@ export async function authenticate(scope: string, signup: boolean, _state: Actio
     }
     const accepted = await supabase.rpc('accept_pending_invitations');
     if (accepted.error) return { error: 'Unable to complete sign-in. Please try again.' };
-    if (scope === 'admin') {
+    if (scope === 'admin' || scope === 'login') {
       const admin = await supabase.rpc('is_platform_admin');
-      if (admin.error || admin.data !== true) return { error: 'This account does not have platform access' };
+      if (admin.error) return { error: 'Unable to verify account access. Please try again.' };
+      if (scope === 'admin' && admin.data !== true) return { error: 'This account does not have platform access' };
+      if (admin.data === true) destination = '/admin';
     } else if (scope !== 'login') {
       const organization = await supabase.from('organizations').select('id').eq('slug', scope).maybeSingle();
       if (organization.error || !organization.data) return { error: 'This account does not have access to this workspace. Contact its administrator.' };
@@ -43,7 +46,7 @@ export async function authenticate(scope: string, signup: boolean, _state: Actio
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'Unable to sign in' };
   }
-  redirect(scope === 'admin' ? '/admin' : scope === 'login' ? '/workspaces' : `/${scope}/dashboard`);
+  redirect(destination);
 }
 
 export async function signOut(form: FormData) {
