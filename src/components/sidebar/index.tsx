@@ -13,11 +13,13 @@ function SidebarHorizon({ routes, open, setOpen, scope }: {
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     drawer.current?.querySelector<HTMLButtonElement>('button')?.focus();
     const media = window.matchMedia('(min-width: 1280px)');
     const close = () => setOpen(false);
     media.addEventListener('change', close);
-    return () => { media.removeEventListener('change', close); previous?.focus(); };
+    return () => { media.removeEventListener('change', close); document.body.style.overflow = previousOverflow; previous?.focus(); };
   }, [open, setOpen]);
   return <>
     {open && <button aria-label="Close navigation backdrop" onClick={() => setOpen(false)} className="fixed inset-0 z-[45] bg-black/40 xl:hidden" />}
