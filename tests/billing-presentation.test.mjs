@@ -18,6 +18,13 @@ test('cancellation shows the paid access expiry rather than a future bill', () =
   assert.equal(summary.date, '8 Nov 2026');
 });
 
+test('completed subscriptions retain their final paid period without promising renewal', () => {
+  const summary = subscriptionSummary({ ...paid, status: 'completed' }, now);
+  assert.equal(summary.label, 'Ending soon'); assert.equal(summary.dateLabel, 'Access expires');
+  assert.equal(summary.canRestart, false);
+  assert.equal(subscriptionSummary({ ...paid, status: 'completed', paid_until: '2026-09-08T12:00:00Z' }, now).canRestart, true);
+});
+
 test('unpaid subscriptions do not invent billing dates', () => {
   assert.equal(subscriptionSummary(null, now).label, 'Not subscribed');
   assert.equal(subscriptionSummary(null, now).date, 'After your first payment');

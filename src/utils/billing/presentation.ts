@@ -14,7 +14,7 @@ export function subscriptionSummary(
   let label = 'Not subscribed';
   let tone = 'neutral';
   if (record) {
-    if (record.status === 'cancelled' && hasPaidPeriod) label = 'Ending soon';
+    if (['cancelled', 'completed', 'expired'].includes(record.status) && hasPaidPeriod) label = 'Ending soon';
     else if (['cancelled', 'completed', 'expired'].includes(record.status))
       label = record.status === 'cancelled' ? 'Cancelled' : 'Expired';
     else if (['pending', 'halted', 'paused'].includes(record.status))
@@ -40,7 +40,7 @@ export function subscriptionSummary(
     ? 'First billing date'
     : paidThrough <= now
     ? 'Last paid period ended'
-    : record?.status === 'cancelled'
+    : record && ['cancelled', 'completed', 'expired'].includes(record.status)
     ? 'Access expires'
     : 'Current period ends';
   return {
