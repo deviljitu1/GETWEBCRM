@@ -1,0 +1,384 @@
+npm warn Unknown project config "auto-install-peers". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown project config "strict-peer-dependencies". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+Γû▓ Next.js 16.4.0 (Turbopack)
+ΓÜá `images.domains` is deprecated in favor of `images.remotePatterns`. Please update next.config.js to protect your application from malicious users.
+Γ£ô Running next.config.js took 66ms
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 14 errors:
+./src/styles/index.css:2038:30
+Error: Parsing CSS source code failed
+  2036 | }
+  2037 |
+> 2038 | input.defaultCheckbox::before path {
+       |                              ^
+  2039 |   fill: currentColor;
+  2040 | }
+  2041 |
+
+Pseudo-elements like '::before' or '::after' can't be followed by selectors like 'Ident("path")'
+
+Generated code of PostCSS transform of file content of src/styles/index.css:
+./src/styles/index.css:2038:30
+  2036 | }
+  2037 |
+> 2038 | input.defaultCheckbox::before path {
+       |                              ^
+  2039 |   fill: currentColor;
+  2040 | }
+  2041 |
+
+Import trace:
+  Client Component Browser:
+    ./src/styles/index.css [Client Component Browser]
+    ./src/app/AppWrappers.tsx [Client Component Browser]
+    ./src/app/AppWrappers.tsx [Server Component]
+    ./src/app/layout.tsx [Server Component]
+
+
+./node_modules/react-icons/lib/esm/index.js:2:1
+Error: Module not found: Can't resolve './iconBase'
+  1 | export * from "./iconsManifest";
+> 2 | export * from "./iconBase";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export * from "./iconContext";
+
+
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/lib/esm/index.js [Client Component Browser]
+    ./node_modules/react-icons/io5/index.esm.js [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/lib/esm/index.js [Client Component SSR]
+    ./node_modules/react-icons/io5/index.esm.js [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/react-icons/lib/esm/index.js:3:1
+Error: Module not found: Can't resolve './iconContext'
+  1 | export * from "./iconsManifest";
+  2 | export * from "./iconBase";
+> 3 | export * from "./iconContext";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/lib/esm/index.js [Client Component Browser]
+    ./node_modules/react-icons/io5/index.esm.js [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/lib/esm/index.js [Client Component SSR]
+    ./node_modules/react-icons/io5/index.esm.js [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/react-icons/lib/esm/index.js:1:1
+Error: Module not found: Can't resolve './iconsManifest'
+> 1 | export * from "./iconsManifest";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  2 | export * from "./iconBase";
+  3 | export * from "./iconContext";
+
+
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/lib/esm/index.js [Client Component Browser]
+    ./node_modules/react-icons/io5/index.esm.js [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/lib/esm/index.js [Client Component SSR]
+    ./node_modules/react-icons/io5/index.esm.js [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+./node_modules/react-icons/hi/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function HiAcademicCap (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"viewBox":"0 0 20 20","fill":"currentColor","aria-hid...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/hi/index.esm.js [Client Component Browser]
+    ./src/components/sidebar/RTL.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/layout.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/hi/index.esm.js [Client Component SSR]
+    ./src/components/sidebar/RTL.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/layout.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/layout.tsx [Server Component]
+
+
+./node_modules/react-icons/hi/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function HiAcademicCap (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"viewBox":"0 0 20 20","fill":"currentColor","aria-hid...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/hi/index.esm.js [Client Component Browser]
+    ./src/components/sidebar/RTL.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/layout.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/hi/index.esm.js [Client Component SSR]
+    ./src/components/sidebar/RTL.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/layout.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/layout.tsx [Server Component]
+
+
+./node_modules/react-icons/io5/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function IoAccessibilityOutline (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"viewBox":"0 0 512 512"},"child":[{"tag":"circle","at...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/io5/index.esm.js [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/io5/index.esm.js [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+
+./node_modules/react-icons/io5/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function IoAccessibilityOutline (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"viewBox":"0 0 512 512"},"child":[{"tag":"circle","at...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/io5/index.esm.js [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/io5/index.esm.js [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+
+./node_modules/react-icons/md/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function Md123 (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"viewBox":"0 0 24 24"},"child":[{"tag":"path","attr":...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/md/index.esm.js [Client Component Browser]
+    ./src/app/admin/data-tables/page.tsx [Client Component Browser]
+    ./src/app/admin/data-tables/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/md/index.esm.js [Client Component SSR]
+    ./src/app/admin/data-tables/page.tsx [Client Component SSR]
+    ./src/app/admin/data-tables/page.tsx [Server Component]
+
+
+./node_modules/react-icons/md/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function Md123 (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"viewBox":"0 0 24 24"},"child":[{"tag":"path","attr":...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/md/index.esm.js [Client Component Browser]
+    ./src/app/admin/data-tables/page.tsx [Client Component Browser]
+    ./src/app/admin/data-tables/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/md/index.esm.js [Client Component SSR]
+    ./src/app/admin/data-tables/page.tsx [Client Component SSR]
+    ./src/app/admin/data-tables/page.tsx [Server Component]
+
+
+./node_modules/react-icons/ri/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function RiArrowDownCircleFill (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"viewBox":"0 0 24 24"},"child":[{"tag":"path","attr":...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/ri/index.esm.js [Client Component Browser]
+    ./src/components/navbar/RTL.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/layout.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/ri/index.esm.js [Client Component SSR]
+    ./src/components/navbar/RTL.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/layout.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/layout.tsx [Server Component]
+
+
+./node_modules/react-icons/ri/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function RiArrowDownCircleFill (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"viewBox":"0 0 24 24"},"child":[{"tag":"path","attr":...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/ri/index.esm.js [Client Component Browser]
+    ./src/components/navbar/RTL.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/layout.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/ri/index.esm.js [Client Component SSR]
+    ./src/components/navbar/RTL.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/layout.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/layout.tsx [Server Component]
+
+
+./node_modules/react-icons/ti/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function TiAdjustBrightness (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"version":"1.2","baseProfile":"tiny","viewBox":"0 0 2...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-client] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/ti/index.esm.js [Client Component Browser]
+    ./src/components/card/CardMenu.tsx [Client Component Browser]
+    ./src/components/rtl/dashboard/Tasks.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/ti/index.esm.js [Client Component SSR]
+    ./src/components/card/CardMenu.tsx [Client Component SSR]
+    ./src/components/rtl/dashboard/Tasks.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+
+./node_modules/react-icons/ti/index.esm.js:2:1
+Error: Export GenIcon doesn't exist in target module
+  1 | // THIS FILE IS AUTO GENERATED
+> 2 | import { GenIcon } from '../lib';
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  3 | export function TiAdjustBrightness (props) {
+  4 |   return GenIcon({"tag":"svg","attr":{"version":"1.2","baseProfile":"tiny","viewBox":"0 0 2...
+  5 | };
+
+The export GenIcon was not found in module [project]/node_modules/react-icons/lib/esm/index.js [app-ssr] (ecmascript).
+The module has no exports at all.
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+Import traces:
+  Client Component Browser:
+    ./node_modules/react-icons/ti/index.esm.js [Client Component Browser]
+    ./src/components/card/CardMenu.tsx [Client Component Browser]
+    ./src/components/rtl/dashboard/Tasks.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component Browser]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./node_modules/react-icons/ti/index.esm.js [Client Component SSR]
+    ./src/components/card/CardMenu.tsx [Client Component SSR]
+    ./src/components/rtl/dashboard/Tasks.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Client Component SSR]
+    ./src/app/rtl/rtl-default/page.tsx [Server Component]
+
+
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
+    at <unknown> (https://nextjs.org/docs/messages/module-not-found)
