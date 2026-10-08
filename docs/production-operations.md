@@ -22,6 +22,8 @@ Run `npm run lint`, `npm test`, and `npm run build`. GitHub Actions also applies
 
 ## Backups, restore and monitoring
 
+Vercel runs `/api/health/supabase` daily at 06:17 UTC (11:47 AM India time, with Hobby scheduling delay of up to 59 minutes). Each invocation makes three uncached, read-only database checks using the public key and returns availability only. Failures return HTTP 503 and emit `supabase_health_failed` in Vercel logs. Inspect Settings → Cron Jobs to confirm the job is enabled. Scheduled activity can reduce inactivity pausing on Supabase Free, but it does not guarantee uptime, prevent quota restrictions, or automatically restore a paused project. Supabase Pro removes inactivity pausing.
+
 Before using real customer data, verify the hosted Supabase project's backup retention and recovery capabilities. Free-plan availability must not be assumed to provide a recoverable production backup. Export a full PostgreSQL dump with the PostgreSQL client matching the server version, encrypt it, and retain it in private storage outside the database account. A complete recovery plan includes Auth records, CRM tables, migration history, and any Storage objects.
 
 Restore an encrypted backup into a separate non-production Supabase project. Verify record counts, foreign keys, owner/viewer access, and cross-tenant denial, and record the restoration duration and backup timestamp. Do not run restore experiments against production. Enable Vercel/Supabase operational alerts and inspect function errors, database capacity, auth failures, and quota usage. CI success alone does not verify backups or uptime.

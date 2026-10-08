@@ -121,4 +121,13 @@ DO $$ BEGIN
   IF NOT public.consume_rate_limit('crm-security-test',2,60) OR NOT public.consume_rate_limit('crm-security-test',2,60) OR public.consume_rate_limit('crm-security-test',2,60) THEN RAISE EXCEPTION 'Rate limit failed'; END IF;
 END $$;
 RESET ROLE;
+SET LOCAL ROLE anon;
+DO $$ BEGIN
+  IF NOT public.database_health() THEN RAISE EXCEPTION 'Public database health failed'; END IF;
+  BEGIN
+    PERFORM 1 FROM public.leads LIMIT 1;
+    RAISE EXCEPTION 'Health checks exposed anonymous CRM access';
+  EXCEPTION WHEN insufficient_privilege THEN NULL; END;
+END $$;
+RESET ROLE;
 ROLLBACK;
