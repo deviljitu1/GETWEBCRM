@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { createClient } from 'utils/supabase/server';
 import { validSlug } from './validation';
 
-export const requireOrg = cache(async (slug: string, permission?: string) => {
+export const requireOrg = cache(async (slug: string, permission?: string, billingPage = false) => {
   if (!validSlug(slug)) notFound();
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -21,6 +21,11 @@ export const requireOrg = cache(async (slug: string, permission?: string) => {
   if (grants.error) throw new Error('Unable to verify permissions');
   const permissions = new Set<string>((grants.data || []).map(row => row.permission_key));
   if (permission && !permissions.has(permission)) notFound();
+  if (!billingPage && permission !== 'settings.manage') {
+    const billing = await supabase.rpc('billing_access', { org_id: org.id });
+    if (billing.error) throw new Error('Unable to verify subscription access');
+    if (billing.data !== true) redirect(`/${slug}/billing`);
+  }
   return { supabase, user, org, permissions };
 });
 export const requirePlatformAdmin = cache(async () => {

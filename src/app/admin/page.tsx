@@ -14,6 +14,6 @@ export default async function Dashboard() {
       <Widget icon={<MdCheckCircle />} title="Active organizations" subtitle={String(data.active)} />
       <Widget icon={<MdGroup />} title="Workspace users" subtitle={String(data.members)} />
       <Widget icon={<MdPayment />} title="Active subscription records" subtitle={String(data.subscriptions)} />
-    </div><div className={cardClass}><h2 className="mb-4 text-xl font-bold">Recent organizations</h2>{recent.data.map(org=><div className="flex justify-between border-b p-3" key={org.id}><span>{org.name}</span><span>{org.status}</span></div>)}{!recent.data.length && <p>No organizations yet.</p>}<Link className="mt-4 block text-brand-500" href="/admin/tenants">Manage organizations</Link></div>
+    </div><div className={cardClass}><h2 className="mb-4 text-xl font-bold">Recent organizations</h2>{recent.data.map(org=><div className="flex flex-wrap justify-between gap-2 border-b p-3" key={org.id}><span>{org.name}</span><span>{org.status}</span></div>)}{!recent.data.length && <p>No organizations yet.</p>}<Link className="mt-4 block text-brand-500" href="/admin/tenants">Manage organizations</Link></div>
   </div>;
 }

@@ -33,7 +33,9 @@ export async function savePlan(id: string | null, _state: ActionState, form: For
   return save(user.id,async()=>{
     const currency_code = text(form,'currency_code',3,true).toUpperCase();
     if (!['INR','USD','EUR','GBP'].includes(currency_code)) throw new Error('Unsupported currency');
-    const plan = {name:text(form,'name',100,true),price_monthly:money(text(form,'price_monthly',16,true)),currency_code,is_active:form.get('is_active') === 'on'};
+    const providerPlan = text(form,'razorpay_plan_id',80);
+    if (providerPlan && !/^plan_[A-Za-z0-9]+$/.test(providerPlan)) throw new Error('Invalid Razorpay plan ID');
+    const plan = {name:text(form,'name',100,true),price_monthly:money(text(form,'price_monthly',16,true)),currency_code,is_active:form.get('is_active') === 'on',razorpay_plan_id:providerPlan || null};
     const result = id ? await supabase.from('plans').update(plan).eq('id',uuid(id)).select('id').single() : await supabase.from('plans').insert(plan);
     check(result.error); return 'Plan saved';
   });

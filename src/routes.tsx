@@ -3,7 +3,7 @@ import React from 'react';
 // Admin Imports
 
 // Icon Imports
-import { MdHome, MdPeople, MdApartment, MdSettings } from 'react-icons/md';
+import { MdHome, MdPeople, MdApartment, MdSettings, MdPayment } from 'react-icons/md';
 
 const routes = [
   {
@@ -23,6 +23,9 @@ const routes = [
     layout: '/grahsiddhi',
     path: 'inventory',
     icon: <MdApartment className="h-6 w-6" />,
+  },
+  {
+    name: 'Subscription', layout: '/workspace', path: 'billing', icon: <MdPayment className="h-6 w-6" />,
   },
   {
     name: 'Settings',

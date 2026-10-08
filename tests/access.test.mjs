@@ -5,10 +5,10 @@ import { SourceTextModule, SyntheticModule } from 'node:vm';
 import ts from 'typescript';
 import * as validation from '../src/utils/crm/validation.ts';
 
-async function access({user = {id:'member'},org = {id:'org',status:'active'},membership = {role_id:'role'},permissions = ['leads.create'],admin = false,queryError = null} = {}) {
+async function access({user = {id:'member'},org = {id:'org',status:'active'},membership = {role_id:'role'},permissions = ['leads.create'],admin = false,paidAccess = true,queryError = null} = {}) {
   const client = {
     auth:{getUser:async()=>({data:{user},error:null})},
-    rpc:async()=>({data:admin,error:null}),
+    rpc:async name=>({data:name==='billing_access'?paidAccess:admin,error:null}),
     from(table) {
       const result={data:table==='organizations'?org:table==='organization_members'?membership:permissions.map(permission_key=>({permission_key})),error:queryError};
       const query={select:()=>query,eq:()=>query,maybeSingle:async()=>result,then:(resolve)=>Promise.resolve(result).then(resolve)};
@@ -49,4 +49,10 @@ test('authorized members receive only their workspace context',async()=>{
 test('platform access requires a verified platform role',async()=>{
   const rejected=await access({admin:false});await assert.rejects(rejected.requirePlatformAdmin(),/NOT_FOUND/);
   const accepted=await access({admin:true});assert.equal((await accepted.requirePlatformAdmin()).user.id,'member');
+});
+test('unpaid members are routed to billing while billing and settings remain reachable',async()=>{
+  const dal=await access({paidAccess:false,permissions:['leads.create','settings.manage']});
+  await assert.rejects(dal.requireOrg('tenant-a','leads.create'),/REDIRECT:\/tenant-a\/billing/);
+  assert.equal((await dal.requireOrg('tenant-a',undefined,true)).org.id,'org');
+  assert.equal((await dal.requireOrg('tenant-a','settings.manage')).org.id,'org');
 });

@@ -1,6 +1,6 @@
 # Production operations
 
-Use Node 24 and install with `npm ci --legacy-peer-deps`. Configure the four variables in `.env.example` in Vercel; keep the service-role key server-only. The service-role client is used exclusively for database-backed request throttling. Tenant data uses the authenticated client's RLS.
+Use Node 24 and install with `npm ci --legacy-peer-deps`. Configure variables in `.env.example` in Vercel; keep the service-role key and Razorpay secrets server-only. The service-role client handles database-backed throttling and verified billing synchronization. Tenant data uses the authenticated client's RLS.
 
 ## Database and initial access
 
@@ -19,6 +19,14 @@ Set Supabase Authentication → URL Configuration → Site URL to the current pr
 ## Release checks
 
 Run `npm run lint`, `npm test`, and `npm run build`. GitHub Actions also applies migrations to a disposable PostgreSQL instance and runs `tests/database/security.sql`. That test transaction rolls back all fixtures. Check the Vercel deployment has reached Ready before testing Google login from the current production domain. Verify one owner and one viewer session, cross-tenant denial, CSV import, property status conflicts, and logout.
+
+## Razorpay subscriptions
+
+Apply migration 00005 before deploying billing routes. Add `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and an independently generated `RAZORPAY_WEBHOOK_SECRET` to Vercel. Start with test keys. Enable all `subscription.*` events at `https://getwebcrm.vercel.app/api/webhooks/razorpay`, using the same webhook secret. Invalid signatures are rejected and processing failures return 503 for Razorpay retries. Events fetch the current subscription from Razorpay; transactional receipts and revision checks handle duplicate and concurrent delivery.
+
+Create a monthly INR plan and subscription link in Razorpay. In `/admin/billing`, save the matching price and Razorpay plan ID, then link the intended organization's subscription ID. The server verifies provider plan, amount and currency before accepting the link. One organization has one current contract; replacement requires a terminal previous contract with no remaining paid period. The workspace administrator can use `/<workspace>/billing` to open hosted checkout or cancel renewal. Subscription links renew for the total billing cycles chosen in Razorpay; renew or replace contracts after that term. Onboarding and plan changes are assisted by the platform administrator.
+
+Verify checkout, activation, renewal, failed-payment recovery, cancellation, duplicate/out-of-order webhook delivery, and period expiry in test mode. Test contracts never grant live paid access. Configure separate live keys and live webhook secret, set `RAZORPAY_LIVE_ENABLED=true`, redeploy, and perform a controlled live verification before requiring payment. Keep payment enforcement off until then. Enabling it blocks CRM data through RLS without blocking billing management; cancelled subscriptions retain access through their already-paid period. Settings and membership management remain available. Manual subscription records are bookkeeping and do not grant paid access. Use the refresh button to reconcile missed events and monitor `razorpay_webhook_failed` logs. Handle refunds, disputes and tax invoicing through your Razorpay operations process; review workspace entitlement manually after refunds.
 
 ## Backups, restore and monitoring
 

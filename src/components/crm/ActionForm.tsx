@@ -14,7 +14,7 @@ export default function ActionForm({ action, children, reset = false, className 
   const [state, formAction] = useActionState(action, {});
   const ref = useRef<HTMLFormElement>(null);
   useEffect(() => { if (reset && state.message) ref.current?.reset(); }, [reset, state]);
-  return <form ref={ref} action={formAction} className={`flex flex-col gap-4 ${className}`}>
+  return <form ref={ref} action={formAction} className={`min-w-0 flex flex-col gap-4 ${className}`}>
     {state.error && <p role="alert" className="text-sm text-red-600">{state.error}</p>}
     {state.message && <p role="status" className="text-sm text-green-700">{state.message}</p>}
     {children}
