@@ -17,7 +17,7 @@ export default async function Billing() {
     supabase.from('billing_settings').select('organization_id,payment_required'),
   ]);
   [plans,orgs,subscriptions,contracts,billingSettings].forEach(r=>checkQuery(r.error));
-  return <div className="flex flex-col gap-5"><h1 className="text-2xl font-bold">Plans and subscription records</h1><p className="text-sm text-gray-500">These records track agreed plans. Payments are collected externally.</p>
+  return <div className="flex flex-col gap-5"><p className="text-sm text-gray-500">These records track agreed plans. Payments are collected externally.</p>
     <details className={cardClass}><summary className="cursor-pointer font-bold">Add plan</summary><ActionForm action={savePlan.bind(null,null)} reset className="mt-4"><PlanFields/></ActionForm></details>
     <div className="grid gap-5 md:grid-cols-2">{plans.data.map(plan=><div key={plan.id} className={cardClass}><ActionForm action={savePlan.bind(null,plan.id)}><PlanFields plan={plan}/></ActionForm></div>)}</div>
     {orgs.data.length > 0 && plans.data.length > 0 && <div className={cardClass}><h2 className="mb-4 text-xl font-bold">Set subscription</h2><ActionForm action={saveSubscription}>

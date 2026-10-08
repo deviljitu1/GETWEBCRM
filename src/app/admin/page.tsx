@@ -8,7 +8,7 @@ export default async function Dashboard() {
   const [summary,recent] = await Promise.all([supabase.rpc('platform_summary'),supabase.from('organizations').select('id,name,slug,status').order('created_at',{ascending:false}).limit(10)]);
   checkQuery(summary.error); checkQuery(recent.error);
   const data = summary.data;
-  return <div className="flex flex-col gap-5"><h1 className="text-2xl font-bold">Platform overview</h1>
+  return <div className="flex flex-col gap-5">
     <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
       <Widget icon={<MdBusiness />} title="Organizations" subtitle={String(data.organizations)} />
       <Widget icon={<MdCheckCircle />} title="Active organizations" subtitle={String(data.active)} />

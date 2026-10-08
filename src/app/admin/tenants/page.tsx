@@ -8,7 +8,7 @@ export default async function Tenants({searchParams}:{searchParams:Promise<{page
   const {supabase} = await requirePlatformAdmin(), page=pageNumber((await searchParams).page);
   const result = await supabase.from('organizations').select('id,name,slug,status',{count:'exact'}).order('created_at',{ascending:false}).order('id').range((page-1)*25,page*25-1);
   checkQuery(result.error);
-  return <div className="flex flex-col gap-5"><h1 className="text-2xl font-bold">Organizations</h1>
+  return <div className="flex flex-col gap-5">
     <details className={cardClass}><summary className="cursor-pointer font-bold">Create organization</summary><p className="my-4 text-sm text-gray-500">The owner must first create an account and verify their email at <Link href="/login" className="text-brand-500">the shared login page</Link>.</p>
       <ActionForm action={createOrganization} reset><Field label="Organization name" name="name" required maxLength={160}/><Field label="Workspace slug" name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxLength={80}/><Field label="Verified owner email" name="owner_email" type="email" required maxLength={254}/><Submit>Create workspace</Submit></ActionForm>
     </details>
