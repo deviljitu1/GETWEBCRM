@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { HiX } from 'react-icons/hi';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import Links from './components/Links';
 
 import SidebarCard from 'components/sidebar/components/SidebarCard';
 import { IRoute } from 'types/navigation';
 
-function SidebarHorizon({ routes, open, setOpen, scope }: {
-  routes: IRoute[]; open: boolean; setOpen: Dispatch<SetStateAction<boolean>>; scope: string;
+function SidebarHorizon({ routes, open, setOpen, collapsed, setCollapsed, scope }: {
+  routes: IRoute[]; open: boolean; setOpen: Dispatch<SetStateAction<boolean>>; collapsed?: boolean; setCollapsed?: Dispatch<SetStateAction<boolean>>; scope: string;
 }) {
   const drawer = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -36,7 +37,9 @@ function SidebarHorizon({ routes, open, setOpen, scope }: {
         }
       }}
       onClick={event => { if ((event.target as HTMLElement).closest('a')) setOpen(false); }}
-      className={`fixed left-0 top-0 z-50 flex h-dvh w-[288px] max-w-[90vw] flex-col overflow-y-auto bg-white pb-6 shadow-2xl transition-transform duration-200 dark:bg-navy-800 dark:text-white xl:visible xl:z-30 ${
+      className={`fixed left-0 top-0 z-50 flex h-dvh max-w-[90vw] flex-col overflow-y-auto bg-white pb-6 shadow-2xl transition-all duration-300 dark:bg-navy-800 dark:text-white xl:visible xl:z-30 ${
+        collapsed ? 'w-[80px]' : 'w-[288px]'
+      } ${
         open ? 'visible translate-x-0' : 'invisible -translate-x-full xl:translate-x-0'
       }`}
     >
@@ -47,20 +50,30 @@ function SidebarHorizon({ routes, open, setOpen, scope }: {
         <HiX />
       </button>
 
-      <div className={`mx-[56px] mt-[50px] flex items-center`}>
+      {setCollapsed && (
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="absolute -right-3 top-6 hidden h-6 w-6 items-center justify-center rounded-full bg-brand-500 text-white shadow-md xl:flex hover:bg-brand-600 transition-colors z-50"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
+        </button>
+      )}
+
+      <div className={`mx-[auto] mt-[50px] flex items-center justify-center`}>
         <div className="ml-1 mt-1 h-2.5 font-poppins text-[26px] font-bold uppercase text-navy-700 dark:text-white">
-          GETWEB<span className="font-medium text-[#C9A24A]">CRM</span>
+          {collapsed ? 'GW' : <>GETWEB<span className="font-medium text-[#C9A24A]">CRM</span></>}
         </div>
       </div>
       <div className="mb-7 mt-[58px] h-px bg-gray-300 dark:bg-white/30" />
       {/* Nav item */}
 
       <ul className="mb-auto pt-1">
-        <Links routes={routes} />
+        <Links routes={routes} collapsed={collapsed} />
       </ul>
 
       {/* Free Horizon Card */}
-      {scope === 'admin' && <div className="flex justify-center">
+      {scope === 'admin' && !collapsed && <div className="flex justify-center">
         <SidebarCard />
       </div>}
 
