@@ -46,7 +46,7 @@ DO $$ BEGIN
   IF (SELECT count(*) FROM public.leads) <> 1 THEN RAISE EXCEPTION 'Paid owner access denied'; END IF;
 END $$;
 RESET ROLE;
-UPDATE public.billing_contracts SET paid_until=now()-interval '1 day';
+UPDATE public.billing_contracts SET paid_until=now()-interval '1 day' WHERE provider_id='sub_Test';
 SET LOCAL ROLE authenticated;
 DO $$ BEGIN
   IF EXISTS(SELECT 1 FROM public.leads) THEN RAISE EXCEPTION 'Expired subscription retained access'; END IF;
