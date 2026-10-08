@@ -4,9 +4,9 @@ import type { ReactNode } from 'react';
 import { useFormStatus } from 'react-dom';
 export type ActionState = { error?: string; message?: string };
 export type FormAction = (state: ActionState, form: FormData) => Promise<ActionState>;
-export function Submit({ children }: { children: ReactNode }) {
+export function Submit({ children, disabled = false }: { children: ReactNode; disabled?: boolean }) {
   const { pending } = useFormStatus();
-  return <button disabled={pending} className="rounded-xl bg-brand-500 px-5 py-3 font-medium text-white hover:bg-brand-600 disabled:opacity-50">{pending ? 'Saving…' : children}</button>;
+  return <button disabled={pending || disabled} className="min-h-11 rounded-xl bg-brand-500 px-5 py-3 font-medium text-white hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50">{pending ? 'Saving…' : children}</button>;
 }
 export default function ActionForm({ action, children, reset = false, className = '' }: {
   action: FormAction; children: ReactNode; reset?: boolean; className?: string;
