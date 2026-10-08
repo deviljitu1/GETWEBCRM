@@ -12,6 +12,7 @@ import {
 } from 'utils/billing/razorpay';
 import type { ProviderSubscription } from 'utils/billing/razorpay';
 import type { ActionState } from 'components/crm/ActionForm';
+import { createWorkspaceCheckout } from 'utils/billing/checkout';
 
 type ProviderPlan = {
   id: string;
@@ -95,7 +96,7 @@ export async function createCheckoutSubscription(
   _state: ActionState,
   form: FormData,
 ): Promise<ActionState> {
-  const { supabase, user } = await requirePlatformAdmin();
+  const { user } = await requirePlatformAdmin();
   try {
     await rateLimit(`billing:admin:${user.id}`, 10, 60);
     const org = uuid(text(form, 'organization_id', 36, true));
@@ -103,73 +104,12 @@ export async function createCheckoutSubscription(
     const cycles = Number(text(form, 'billing_cycles', 3, true));
     if (!Number.isInteger(cycles) || cycles < 1 || cycles > 120)
       throw new Error('Billing cycles must be between 1 and 120');
-    const [organization, existing] = await Promise.all([
-      supabase.from('organizations').select('id').eq('id', org).single(),
-      supabase
-        .from('billing_contracts')
-        .select('provider_id')
-        .eq('organization_id', org)
-        .maybeSingle(),
-    ]);
-    if (organization.error || !organization.data)
-      throw new Error('Choose an existing workspace');
-    if (existing.error)
-      throw new Error('Unable to check the workspace checkout');
-    if (existing.data)
-      throw new Error(
-        'This workspace already has a checkout. Use its existing payment link.',
-      );
-    const plan = await supabase
-      .from('plans')
-      .select('razorpay_plan_id,is_active,price_monthly,currency_code')
-      .eq('id', planId)
-      .single();
-    if (plan.error || !plan.data.is_active || !plan.data.razorpay_plan_id)
-      throw new Error('Connect this active plan to Razorpay first');
-    const remotePlan = await razorpay<ProviderPlan>(
-      `plans/${plan.data.razorpay_plan_id}`,
-    );
-    if (
-      remotePlan.period !== 'monthly' ||
-      remotePlan.interval !== 1 ||
-      remotePlan.item.currency !== 'INR' ||
-      plan.data.currency_code !== 'INR' ||
-      remotePlan.item.amount !==
-        Math.round(Number(plan.data.price_monthly) * 100)
-    )
-      throw new Error(
-        'The Razorpay plan must match the CRM monthly price in INR',
-      );
-    const remote = subscriptionData(
-      await razorpay<ProviderSubscription>('subscriptions', {
-        plan_id: plan.data.razorpay_plan_id,
-        total_count: cycles,
-        customer_notify: 1,
-        notes: { organization_id: org },
-      }),
-    );
-    if (remote.plan_id !== plan.data.razorpay_plan_id || !remote.short_url)
-      throw new Error('Razorpay returned an invalid checkout');
-    const result = await createAdminClient().rpc('attach_billing_contract', {
-      org_id: org,
-      local_plan: planId,
-      provider_sub: remote.id,
-      provider_mode: billingMode(),
-      provider_status: remote.status,
-      checkout: remote.short_url,
-      paid: remote.paid_count,
-      paid_end: null,
-      cycles: remote.total_count,
-    });
-    if (result.error)
-      throw new Error(
-        `Checkout created but could not be linked. Use Advanced to link ${remote.id}; do not create another checkout.`,
-      );
+    await createWorkspaceCheckout(org, planId, cycles);
     revalidatePath('/admin/billing');
     revalidatePath('/', 'layout');
     return {
       message:
-        'Checkout created. Open the checkout below to share its payment link with the customer.',
+        'Subscription link ready. Share the secure payment link below with the workspace administrator.',
     };
   } catch (error) {
     return {
@@ -263,12 +203,10 @@ export async function enforcePayment(
   const { supabase, user } = await requirePlatformAdmin();
   try {
     await rateLimit(`billing:admin:${user.id}`, 10, 60);
-    const result = await supabase
-      .from('billing_settings')
-      .upsert({
-        organization_id: uuid(text(form, 'organization_id', 36, true)),
-        payment_required: form.get('payment_required') === 'on',
-      });
+    const result = await supabase.from('billing_settings').upsert({
+      organization_id: uuid(text(form, 'organization_id', 36, true)),
+      payment_required: form.get('payment_required') === 'on',
+    });
     if (result.error) throw new Error('Unable to update payment requirement');
     revalidatePath('/', 'layout');
     return { message: 'Payment requirement updated' };

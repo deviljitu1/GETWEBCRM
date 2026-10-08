@@ -36,6 +36,11 @@ export async function savePlan(id: string | null, _state: ActionState, form: For
     const providerPlan = text(form,'razorpay_plan_id',80);
     if (providerPlan && !/^plan_[A-Za-z0-9]+$/.test(providerPlan)) throw new Error('Invalid Razorpay plan ID');
     const plan = {name:text(form,'name',100,true),price_monthly:money(text(form,'price_monthly',16,true)),currency_code,is_active:form.get('is_active') === 'on',razorpay_plan_id:providerPlan || null};
+    if (id) {
+      const current = await supabase.from('plans').select('price_monthly,currency_code,razorpay_plan_id').eq('id',uuid(id)).single();
+      check(current.error);
+      if (current.data.razorpay_plan_id && (Number(current.data.price_monthly) !== plan.price_monthly || current.data.currency_code !== currency_code)) throw new Error('A connected subscription price is fixed. Contact support to configure a new price for future subscriptions.');
+    }
     const result = id ? await supabase.from('plans').update(plan).eq('id',uuid(id)).select('id').single() : await supabase.from('plans').insert(plan);
     check(result.error); return 'Plan saved';
   });

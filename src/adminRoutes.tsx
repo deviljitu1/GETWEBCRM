@@ -15,7 +15,7 @@ const adminRoutes = [
     path: 'tenants',
   },
   {
-    name: 'SaaS Plans & Billing',
+    name: 'Subscriptions',
     layout: '/admin',
     path: 'billing',
     icon: <MdPayment className="h-6 w-6" />,

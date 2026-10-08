@@ -28,16 +28,16 @@ const FreeCard = () => {
       </div>
 
       <div className="mt-16 flex h-fit flex-col items-center">
-        <p className="text-lg font-bold text-white">Manage billing</p>
+        <p className="text-lg font-bold text-white">Subscriptions</p>
         <p className="mt-1 px-4 text-center text-sm text-white">
-          Create plans and manage workspace subscriptions.
+          View monthly subscriptions and billing.
         </p>
 
         <Link
           className="text-medium mt-7 block rounded-full bg-gradient-to-b from-white/50 to-white/10 px-11 py-[12px] text-center text-base text-white hover:bg-gradient-to-b hover:from-white/40 hover:to-white/5 "
           href="/admin/billing"
         >
-          Manage plans
+          View subscriptions
         </Link>
       </div>
     </div>

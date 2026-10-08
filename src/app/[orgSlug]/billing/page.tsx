@@ -1,79 +1,207 @@
 import { requireOrg, checkQuery } from 'utils/crm/access';
+import { createAdminClient } from 'utils/supabase/admin';
+import { getMonthlyPlan } from 'utils/billing/catalog';
+import { subscriptionSummary } from 'utils/billing/presentation';
+import { billingConfiguration } from 'utils/billing/razorpay';
+import SubscriptionPlan, {
+  SubscriptionBadge,
+} from 'components/crm/SubscriptionPlan';
 import { cardClass } from 'components/crm/Fields';
 import ActionForm, { Submit } from 'components/crm/ActionForm';
-import { cancelSubscription } from './actions';
-export default async function Billing({ params }: { params: Promise<{ orgSlug: string }> }) {
+import { cancelSubscription, startSubscription } from './actions';
+
+export default async function Billing({
+  params,
+}: {
+  params: Promise<{ orgSlug: string }>;
+}) {
   const { orgSlug } = await params;
-  const { supabase, org, permissions } = await requireOrg(orgSlug, undefined, true);
-  if (!permissions.has('settings.manage')) return <div className={cardClass}><h1 className="text-2xl font-bold">Workspace subscription</h1><p className="mt-4">Contact your workspace administrator to manage billing or restore subscription access.</p></div>;
-  
-  const [contract, sub, settings] = await Promise.all([
-    supabase.from('billing_contracts').select('status,mode,paid_until,total_count,checkout_url').eq('organization_id',org.id).maybeSingle(),
-    supabase.from('organization_subscriptions').select('status,plan_id').eq('organization_id',org.id).maybeSingle(),
-    supabase.from('billing_settings').select('payment_required').eq('organization_id',org.id).maybeSingle(),
+  const { supabase, org, permissions } = await requireOrg(
+    orgSlug,
+    undefined,
+    true,
+  );
+  if (!permissions.has('settings.manage'))
+    return (
+      <div className={cardClass}>
+        <h1 className="text-2xl font-bold">Subscription & billing</h1>
+        <p className="mt-4">
+          Contact your workspace administrator to manage your subscription.
+        </p>
+      </div>
+    );
+  const [contract, monthlyPlan] = await Promise.all([
+    supabase
+      .from('billing_contracts')
+      .select(
+        'plan_id,status,mode,paid_until,paid_count,total_count,checkout_url',
+      )
+      .eq('organization_id', org.id)
+      .maybeSingle(),
+    getMonthlyPlan(),
   ]);
-  
-  let plan = null;
-  if (sub.data?.plan_id) {
-    const p = await supabase.from('plans').select('name,price_monthly,currency_code').eq('id', sub.data.plan_id).maybeSingle();
-    plan = p.data;
-  }
-
+  checkQuery(contract.error);
   const record = contract.data;
-  const paymentRequired = settings.data?.payment_required ?? false;
-  const hasPaidContract = record?.mode === 'live' && record?.status === 'active' && record?.paid_until && new Date(record.paid_until) > new Date();
-  
-  const featuresActive = !paymentRequired || hasPaidContract;
+  const summary = subscriptionSummary(record);
+  const ended = summary.canRestart;
+  let plan = monthlyPlan;
+  if (record && !ended && record.plan_id !== monthlyPlan?.id) {
+    const subscribed = await createAdminClient()
+      .from('plans')
+      .select('id,name,price_monthly,currency_code,is_active,razorpay_plan_id')
+      .eq('id', record.plan_id)
+      .single();
+    checkQuery(subscribed.error);
+    plan = subscribed.data;
+  }
+  const canSubscribe =
+    billingConfiguration().configured && !!monthlyPlan?.razorpay_plan_id;
 
-  return <div className="flex flex-col gap-6">
-    <div className={cardClass}>
-      <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4 dark:border-navy-700">
-        <h1 className="text-2xl font-bold text-navy-700 dark:text-white">Workspace subscription</h1>
-        <span className={`rounded-full px-3 py-1 text-sm font-semibold ${featuresActive ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
-          {featuresActive ? 'Features Active' : 'Features Blocked'}
-        </span>
+  return (
+    <div className="flex min-w-0 flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold text-navy-700 dark:text-white sm:text-3xl">
+          Subscription & billing
+        </h1>
+        <p className="mt-2 text-sm text-gray-700 dark:text-gray-200">
+          Manage the monthly subscription for {org.name}.
+        </p>
       </div>
-
-      <div className="mb-8 grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-gray-100 p-4 dark:border-navy-700">
-          <h2 className="mb-1 text-sm font-semibold text-gray-500">Current Plan</h2>
-          {plan ? (
-            <div>
-              <p className="text-lg font-bold text-navy-700 dark:text-white">{plan.name}</p>
-              <p className="text-sm text-gray-500">Assigned status: <span className="uppercase">{sub.data?.status}</span></p>
-            </div>
-          ) : (
-            <p className="text-navy-700 dark:text-white">No plan assigned</p>
-          )}
-        </div>
-        
-        <div className="rounded-xl border border-gray-100 p-4 dark:border-navy-700">
-          <h2 className="mb-1 text-sm font-semibold text-gray-500">Paid Access</h2>
-          {record?.paid_until ? (
-            <div>
-              <p className="text-lg font-bold text-navy-700 dark:text-white">
-                {new Date(record.paid_until).toLocaleString('en-IN',{timeZone:'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short'})}
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        {plan ? (
+          <SubscriptionPlan
+            name={plan.name}
+            price={plan.price_monthly}
+            currency={plan.currency_code}
+          >
+            {!record || ended ? (
+              <>
+                <ActionForm action={startSubscription.bind(null, orgSlug)}>
+                  <Submit disabled={!canSubscribe}>
+                    {ended ? 'Resubscribe' : 'Subscribe monthly'}
+                  </Submit>
+                </ActionForm>
+                <p className="mt-3 text-xs text-gray-700 dark:text-gray-200">
+                  {canSubscribe
+                    ? 'Complete secure checkout with Razorpay. Billing starts after your first payment.'
+                    : 'Checkout is temporarily unavailable. Contact support to subscribe.'}
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-gray-700 dark:text-gray-200">
+                Your selected monthly plan. See your payment and renewal status
+                under Your subscription.
               </p>
-              <p className="text-sm text-gray-500">
-                {record.mode === 'test' ? 'Test payment (does not grant access)' : 'Live subscription'}
-              </p>
+            )}
+            <p className="mt-4 text-xs text-gray-700 dark:text-gray-200">
+              Monthly billing. New subscriptions run for up to 12 monthly
+              payments. Cancel renewal from this page.
+            </p>
+          </SubscriptionPlan>
+        ) : (
+          <section className={cardClass}>
+            <h2 className="text-xl font-bold">Monthly subscription</h2>
+            <p className="mt-3 text-sm text-gray-700 dark:text-gray-200">
+              Our subscription plan is being prepared. Contact support for
+              availability.
+            </p>
+          </section>
+        )}
+        <section className={cardClass}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-bold">Your subscription</h2>
+            <SubscriptionBadge label={summary.label} tone={summary.tone} />
+          </div>
+          <dl className="mt-6 grid gap-5 rounded-2xl bg-gray-50 p-5 dark:bg-navy-900">
+            <div>
+              <dt className="text-xs text-gray-700 dark:text-gray-200">
+                Billing frequency
+              </dt>
+              <dd className="mt-1 font-semibold">Monthly</dd>
             </div>
-          ) : (
-            <p className="text-navy-700 dark:text-white">{paymentRequired ? 'Awaiting payment' : 'No payment required currently'}</p>
+            <div>
+              <dt className="text-xs text-gray-700 dark:text-gray-200">
+                {summary.dateLabel}
+              </dt>
+              <dd className="mt-1 font-semibold">{summary.date}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-gray-700 dark:text-gray-200">
+                Payment method
+              </dt>
+              <dd className="mt-1 font-semibold">
+                Secure payment through Razorpay
+              </dd>
+            </div>
+          </dl>
+          {!record && (
+            <p className="mt-5 text-sm text-gray-700 dark:text-gray-200">
+              Choose Subscribe monthly to start your subscription. Your billing
+              dates will appear here after payment.
+            </p>
           )}
-        </div>
+          {record?.mode === 'test' && (
+            <p className="mt-5 rounded-xl bg-amber-100 p-4 text-sm text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+              This is a test subscription. Test payments do not activate paid
+              workspace access.
+            </p>
+          )}
+          {record && ['created', 'authenticated'].includes(record.status) && (
+            <div className="mt-5">
+              <p className="mb-4 text-sm text-gray-700 dark:text-gray-200">
+                {record.status === 'created'
+                  ? 'Complete checkout to activate your monthly subscription.'
+                  : 'Payment authorization received. Waiting for Razorpay to confirm your first payment.'}
+              </p>
+              {record.checkout_url && (
+                <a
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600"
+                  href={record.checkout_url}
+                  rel="noreferrer"
+                >
+                  Continue to payment
+                </a>
+              )}
+            </div>
+          )}
+          {record &&
+            ['pending', 'halted', 'paused'].includes(record.status) && (
+              <p className="mt-5 rounded-xl bg-amber-100 p-4 text-sm text-amber-900 dark:bg-amber-900 dark:text-amber-100">
+                {record.status === 'paused'
+                  ? 'Renewal is paused.'
+                  : 'Your latest renewal has not been paid.'}{' '}
+                Contact support to update your payment method and resume
+                billing.
+              </p>
+            )}
+          {record?.status === 'cancelled' && !ended && (
+            <p className="mt-5 text-sm text-gray-700 dark:text-gray-200">
+              Renewal is cancelled. Your paid access continues until{' '}
+              {summary.date}.
+            </p>
+          )}
+          {record &&
+            ['active', 'authenticated', 'pending', 'halted', 'paused'].includes(
+              record.status,
+            ) && (
+              <details className="mt-6 border-t border-gray-200 pt-5 dark:border-navy-600">
+                <summary className="cursor-pointer text-sm font-semibold text-red-600 dark:text-red-300">
+                  Cancel renewal
+                </summary>
+                <div className="mt-4 rounded-xl border border-red-200 p-4 dark:border-red-900">
+                  <p className="mb-4 text-sm text-gray-700 dark:text-gray-200">
+                    Future monthly payments will stop. Paid access remains
+                    available until the current paid period ends. You can
+                    resubscribe after that period.
+                  </p>
+                  <ActionForm action={cancelSubscription.bind(null, orgSlug)}>
+                    <Submit>Confirm cancellation</Submit>
+                  </ActionForm>
+                </div>
+              </details>
+            )}
+        </section>
       </div>
-
-      {!featuresActive && <div className="mb-6 rounded-lg bg-red-50 p-4 text-red-800 dark:bg-red-900/20 dark:text-red-400">
-        <p className="font-medium">Your workspace features are currently locked.</p>
-        <p className="mt-1 text-sm">A paid subscription is required to restore access to CRM features.</p>
-      </div>}
-
-      {!record ? <p className="text-gray-600 dark:text-gray-400">Contact platform support to choose a plan and receive a subscription checkout link.</p> : <>
-        <p className="mb-4 text-sm text-gray-500">Monthly payments renew for {record.total_count} billing cycles. Your card and payment details are entered securely on Razorpay.</p>
-        {['created','authenticated'].includes(record.status) && <a className="inline-block rounded-full bg-brand-500 px-6 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-600" href={record.checkout_url} rel="noreferrer">Open Razorpay checkout</a>}
-        {['active','authenticated','pending','halted','paused'].includes(record.status) && <details className="mt-6 group"><summary className="cursor-pointer font-medium text-red-500 hover:text-red-600 transition-colors">Cancel subscription renewal</summary><div className="mt-4 rounded-xl border border-red-100 bg-red-50 p-4 dark:border-red-900/30 dark:bg-red-900/10"><p className="mb-4 text-sm text-red-800 dark:text-red-400">Active subscriptions keep paid access until the paid period ends. Cancellation cannot be undone; a new subscription will be needed to restart.</p><ActionForm action={cancelSubscription.bind(null,orgSlug)}><Submit>Confirm cancellation</Submit></ActionForm></div></details>}
-      </>}
     </div>
-  </div>;
+  );
 }
