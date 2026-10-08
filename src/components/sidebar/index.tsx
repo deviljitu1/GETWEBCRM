@@ -20,8 +20,8 @@ function SidebarHorizon({ routes, open, setOpen, scope }: {
     return () => { media.removeEventListener('change', close); previous?.focus(); };
   }, [open, setOpen]);
   return <>
-    {open && <button aria-label="Close navigation backdrop" onClick={() => setOpen(false)} className="fixed inset-0 z-40 bg-black/40 xl:hidden" />}
-    <aside ref={drawer} id="workspace-navigation" aria-label="Workspace navigation"
+    {open && <button aria-label="Close navigation backdrop" onClick={() => setOpen(false)} className="fixed inset-0 z-[45] bg-black/40 xl:hidden" />}
+    <aside ref={drawer} id="workspace-navigation" aria-label="Workspace navigation" role={open ? 'dialog' : undefined} aria-modal={open || undefined}
       onKeyDown={event => {
         if (!open) return;
         if (event.key === 'Escape') { event.preventDefault(); setOpen(false); }
