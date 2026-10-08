@@ -37,7 +37,7 @@ function SidebarHorizon({ routes, open, setOpen, collapsed, setCollapsed, scope 
         }
       }}
       onClick={event => { if ((event.target as HTMLElement).closest('a')) setOpen(false); }}
-      className={`fixed left-0 top-0 z-50 flex h-dvh max-w-[90vw] flex-col overflow-y-auto bg-white pb-6 shadow-2xl transition-all duration-300 dark:bg-navy-800 dark:text-white xl:visible xl:z-30 ${
+      className={`fixed left-0 top-0 z-50 flex h-dvh max-w-[90vw] flex-col bg-white pb-6 shadow-2xl transition-all duration-300 dark:bg-navy-800 dark:text-white xl:visible xl:z-30 ${
         collapsed ? 'w-[80px]' : 'w-[288px]'
       } ${
         open ? 'visible translate-x-0' : 'invisible -translate-x-full xl:translate-x-0'
@@ -60,22 +60,24 @@ function SidebarHorizon({ routes, open, setOpen, collapsed, setCollapsed, scope 
         </button>
       )}
 
-      <div className={`mx-[auto] mt-[50px] flex items-center justify-center`}>
-        <div className="ml-1 mt-1 h-2.5 font-poppins text-[26px] font-bold uppercase text-navy-700 dark:text-white">
-          {collapsed ? 'GW' : <>GETWEB<span className="font-medium text-[#C9A24A]">CRM</span></>}
+      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+        <div className={`mx-[auto] mt-[50px] flex items-center justify-center`}>
+          <div className="ml-1 mt-1 h-2.5 font-poppins text-[26px] font-bold uppercase text-navy-700 dark:text-white">
+            {collapsed ? 'GW' : <>GETWEB<span className="font-medium text-[#C9A24A]">CRM</span></>}
+          </div>
         </div>
+        <div className="mb-7 mt-[58px] h-px shrink-0 bg-gray-300 dark:bg-white/30" />
+        {/* Nav item */}
+
+        <ul className="mb-auto pt-1">
+          <Links routes={routes} collapsed={collapsed} />
+        </ul>
+
+        {/* Free Horizon Card */}
+        {scope === 'admin' && !collapsed && <div className="mt-8 flex justify-center">
+          <SidebarCard />
+        </div>}
       </div>
-      <div className="mb-7 mt-[58px] h-px bg-gray-300 dark:bg-white/30" />
-      {/* Nav item */}
-
-      <ul className="mb-auto pt-1">
-        <Links routes={routes} collapsed={collapsed} />
-      </ul>
-
-      {/* Free Horizon Card */}
-      {scope === 'admin' && !collapsed && <div className="flex justify-center">
-        <SidebarCard />
-      </div>}
 
       {/* Nav item end */}
     </aside>
