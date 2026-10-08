@@ -20,7 +20,7 @@ export default function WorkspaceShell({ children, scope }: { children: ReactNod
     <Sidebar routes={links} open={open} setOpen={setOpen} collapsed={collapsed} setCollapsed={setCollapsed} scope={scope} />
     <div className="min-w-0 w-full font-dm"><main className={`mx-2.5 min-w-0 md:pr-2 transition-all duration-300 ${collapsed ? 'xl:ml-[115px]' : 'xl:ml-[323px]'}`}>
       <Navbar navigationOpen={open} onOpenSidenav={() => setOpen(!open)} brandText={getActiveRoute(links, pathname)} secondary={getActiveNavbar(links, pathname)} />
-      <div className="mx-auto min-h-screen p-2 pt-4 text-navy-700 dark:text-white">{children}</div>
+      <div className="mx-auto min-h-screen p-2 pt-10 text-navy-700 dark:text-white">{children}</div>
       <div className="p-3"><Footer /></div>
     </main></div>
   </div>;
