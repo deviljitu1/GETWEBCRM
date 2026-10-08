@@ -1,0 +1,54 @@
+'use server';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { createClient } from 'utils/supabase/server';
+import { rateLimit } from 'utils/crm/rate-limit';
+import { email, text, validSlug } from 'utils/crm/validation';
+import type { ActionState } from 'components/crm/ActionForm';
+
+export async function authenticate(scope: string, signup: boolean, _state: ActionState, form: FormData): Promise<ActionState> {
+  if (scope !== 'admin' && !validSlug(scope)) return { error: 'Invalid workspace' };
+  if (scope === 'admin' && signup) return { error: 'Platform registration is restricted' };
+  const supabase = await createClient();
+  try {
+    const address = email(text(form, 'email', 254, true), true);
+    const password = form.get('password');
+    if (typeof password !== 'string' || !password || password.length > 128) return { error: 'Invalid password' };
+    if (signup && password.length < 12) return { error: 'Use a password of at least 12 characters' };
+    const requestHeaders = await headers();
+    await rateLimit(`auth:email:${address}`, 10, 900);
+    await rateLimit(`auth:ip:${requestHeaders.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'}`, 50, 900);
+    if (signup) {
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || requestHeaders.get('origin');
+      const callback = origin ? new URL(`/auth/callback?next=/${scope}/dashboard`, origin).toString() : undefined;
+      const result = await supabase.auth.signUp({ email: address, password, options: { emailRedirectTo: callback } });
+      if (result.error) return { error: 'Unable to register. Please try again later.' };
+      if (!result.data.session) return { message: 'Check your email to confirm your account, then sign in.' };
+    } else {
+      const result = await supabase.auth.signInWithPassword({ email: address, password });
+      if (result.error) return { error: 'Invalid email or password' };
+    }
+    const accepted = await supabase.rpc('accept_pending_invitations');
+    if (accepted.error) return { error: 'Unable to complete sign-in. Please try again.' };
+    if (scope === 'admin') {
+      const admin = await supabase.rpc('is_platform_admin');
+      if (admin.error || admin.data !== true) return { error: 'This account does not have platform access' };
+    } else {
+      const organization = await supabase.from('organizations').select('id').eq('slug', scope).maybeSingle();
+      if (organization.error || !organization.data) return { error: 'This account does not have access to this workspace. Contact its administrator.' };
+      const member = await supabase.rpc('is_org_member', { target_org_id: organization.data.id });
+      if (member.error || member.data !== true) return { error: 'This account does not have access to this workspace' };
+    }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'Unable to sign in' };
+  }
+  redirect(scope === 'admin' ? '/admin' : `/${scope}/dashboard`);
+}
+
+export async function signOut(form: FormData) {
+  const scope = text(form, 'scope', 80);
+  const supabase = await createClient();
+  const result = await supabase.auth.signOut();
+  if (result.error) throw new Error('Unable to sign out. Please try again.');
+  redirect(scope === 'admin' ? '/admin/login' : `/${validSlug(scope) ? scope : 'grahsiddhi'}/login`);
+}

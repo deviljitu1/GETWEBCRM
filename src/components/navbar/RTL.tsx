@@ -15,9 +15,7 @@ import avatar from '/public/img/avatars/avatar4.png';
 
 const Navbar = (props: { brandText: string; [x: string]: any }) => {
   const { onOpenSidenav, brandText, mini, hovered } = props;
-  const [darkmode, setDarkmode] = React.useState(
-    document.body.classList.contains('dark'),
-  );
+  const [darkmode, setDarkmode] = React.useState(false);
   return (
     <nav
       className={`duration-175 linear fixed left-3 top-3 flex flex-row flex-wrap items-center justify-between rounded-xl bg-white/30 transition-all ${

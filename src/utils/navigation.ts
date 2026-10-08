@@ -8,8 +8,6 @@ export const findCurrentRoute = (
   routes: IRoute[],
   pathname: string,
 ): IRoute => {
-  if (!isWindowAvailable()) return null;
-
   for (let route of routes) {
     if (!!route.items) {
       const found = findCurrentRoute(route.items, pathname);

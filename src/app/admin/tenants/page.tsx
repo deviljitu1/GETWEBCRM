@@ -1,45 +1,19 @@
-import React from 'react';
-import { MdAdd } from 'react-icons/md';
-
-export default function TenantsPage() {
-  return (
-    <div className="mt-3 grid h-full grid-cols-1 gap-5">
-      <div className="flex w-full items-center justify-between">
-        <h4 className="text-2xl font-bold text-navy-700 dark:text-white">
-          Manage Tenants
-        </h4>
-        <button className="flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-3 text-base font-medium text-white transition duration-200 hover:bg-brand-600 active:bg-brand-700 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-300 dark:active:bg-brand-200">
-          <MdAdd className="h-5 w-5" />
-          Create New Tenant
-        </button>
-      </div>
-
-      <div className="rounded-[20px] bg-white p-5 shadow-xl dark:bg-navy-800">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-navy-700">
-                <th className="pb-3 text-start text-sm font-bold tracking-wide text-gray-600">ORGANIZATION NAME</th>
-                <th className="pb-3 text-start text-sm font-bold tracking-wide text-gray-600">SLUG</th>
-                <th className="pb-3 text-start text-sm font-bold tracking-wide text-gray-600">PLAN</th>
-                <th className="pb-3 text-start text-sm font-bold tracking-wide text-gray-600">STATUS</th>
-                <th className="pb-3 text-start text-sm font-bold tracking-wide text-gray-600">ACTION</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-100 hover:bg-gray-50 dark:border-navy-700 dark:hover:bg-navy-700">
-                <td className="py-4 text-sm font-bold text-navy-700 dark:text-white">GrahSiddhi</td>
-                <td className="py-4 text-sm text-gray-600 dark:text-white">/grahsiddhi</td>
-                <td className="py-4 text-sm font-medium text-brand-500">Pro Plan</td>
-                <td className="py-4 text-sm font-medium text-green-500">Active</td>
-                <td className="py-4">
-                  <a href="/grahsiddhi/dashboard" className="text-sm font-bold text-brand-500 hover:text-brand-600">View Workspace</a>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
+import { requirePlatformAdmin, checkQuery } from 'utils/crm/access';
+import ActionForm, { Submit } from 'components/crm/ActionForm';
+import { Field, Select, cardClass } from 'components/crm/Fields';
+import { createOrganization, setOrganizationStatus } from '../actions';
+import Link from 'next/link';
+import { pageNumber } from 'utils/crm/validation';
+export default async function Tenants({searchParams}:{searchParams:Promise<{page?:string}>}) {
+  const {supabase} = await requirePlatformAdmin(), page=pageNumber((await searchParams).page);
+  const result = await supabase.from('organizations').select('id,name,slug,status',{count:'exact'}).order('created_at',{ascending:false}).order('id').range((page-1)*25,page*25-1);
+  checkQuery(result.error);
+  return <div className="flex flex-col gap-5"><h1 className="text-2xl font-bold">Organizations</h1>
+    <details className={cardClass}><summary className="cursor-pointer font-bold">Create organization</summary><p className="my-4 text-sm text-gray-500">The owner must first create an account and verify their email using a workspace login page.</p>
+      <ActionForm action={createOrganization} reset><Field label="Organization name" name="name" required maxLength={160}/><Field label="Workspace slug" name="slug" required pattern="[a-z0-9]+(-[a-z0-9]+)*" maxLength={80}/><Field label="Verified owner email" name="owner_email" type="email" required maxLength={254}/><Submit>Create workspace</Submit></ActionForm>
+    </details>
+    {result.data.map(org=><div key={org.id} className={cardClass}><h2 className="text-xl font-bold">{org.name}</h2><p className="my-3 text-sm text-gray-500">/{org.slug} · {org.status}</p><ActionForm action={setOrganizationStatus.bind(null,org.id)}><Select label="Workspace status" name="status" defaultValue={org.status}>{['active','suspended','archived'].map(s=><option key={s} value={s}>{s}</option>)}</Select><Submit>Update status</Submit></ActionForm></div>)}
+    {!result.data.length && <p>No organizations found.</p>}
+    <div className="flex gap-4 text-brand-500">{page>1 && <Link href={`/admin/tenants?page=${page-1}`}>Previous</Link>}{page*25<(result.count||0) && <Link href={`/admin/tenants?page=${page+1}`}>Next</Link>}</div>
+  </div>;
 }

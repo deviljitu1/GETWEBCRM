@@ -39,12 +39,17 @@ export async function updateSession(request: NextRequest) {
 
   // Basic route protection
   // If user is not logged in and trying to access a protected route
-  if (!user && pathname !== '/' && !pathname.includes('/login') && !pathname.includes('/api/')) {
+  const publicRoute = pathname === '/' || pathname === '/auth/callback' ||
+    /^\/(?:admin|[a-z0-9]+(?:-[a-z0-9]+)*)\/login$/.test(pathname) || pathname.startsWith('/api/');
+  if (!user && !publicRoute) {
     // Redirect to login page of the current orgSlug if present, else generic login
     const parts = pathname.split('/')
     const orgSlug = parts[1]
     url.pathname = `/${orgSlug}/login`
-    return NextResponse.redirect(url)
+    url.search = ''
+    const response = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie))
+    return response
   }
 
   return supabaseResponse

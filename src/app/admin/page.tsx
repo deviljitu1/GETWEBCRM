@@ -1,79 +1,19 @@
-import React from 'react';
 import Widget from 'components/widget/Widget';
-import { MdBusiness, MdAttachMoney, MdPersonAdd } from 'react-icons/md';
-
-export default function PlatformAdminDashboard() {
-  return (
-    <div className="mt-3 grid h-full grid-cols-1 gap-5 xl:grid-cols-2 2xl:grid-cols-3">
-      <div className="col-span-1 h-fit w-full xl:col-span-2 2xl:col-span-3">
-        {/* Header */}
-        <div className="mb-4 mt-5 flex flex-col justify-between px-4 md:flex-row md:items-center">
-          <h4 className="ml-1 text-2xl font-bold text-navy-700 dark:text-white">
-            Platform Overview
-          </h4>
-        </div>
-
-        {/* Widgets */}
-        <div className="mt-3 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-3 3xl:grid-cols-3">
-          <Widget
-            icon={<MdBusiness className="h-7 w-7" />}
-            title={'Active Tenants (Organizations)'}
-            subtitle={'12'}
-          />
-          <Widget
-            icon={<MdAttachMoney className="h-6 w-6" />}
-            title={'Monthly Recurring Revenue (MRR)'}
-            subtitle={'$4,250'}
-          />
-          <Widget
-            icon={<MdPersonAdd className="h-7 w-7" />}
-            title={'New Signups This Month'}
-            subtitle={'3'}
-          />
-        </div>
-
-        {/* Main Content Area */}
-        <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
-          {/* Recent Tenants Table Placeholder */}
-          <div className="rounded-[20px] bg-white p-5 shadow-xl dark:bg-navy-800">
-            <h4 className="text-xl font-bold text-navy-700 dark:text-white">
-              Recent Organizations
-            </h4>
-            <div className="mt-4 flex flex-col gap-3">
-              <div className="flex justify-between rounded-xl bg-gray-50 p-3 dark:bg-navy-900">
-                <span className="font-bold text-navy-700 dark:text-white">GrahSiddhi</span>
-                <span className="text-green-500">Active - Pro Plan</span>
-              </div>
-              <div className="flex justify-between rounded-xl bg-gray-50 p-3 dark:bg-navy-900">
-                <span className="font-bold text-navy-700 dark:text-white">Skyline Builders</span>
-                <span className="text-green-500">Active - Basic Plan</span>
-              </div>
-              <div className="flex justify-between rounded-xl bg-gray-50 p-3 dark:bg-navy-900">
-                <span className="font-bold text-navy-700 dark:text-white">Apex Real Estate</span>
-                <span className="text-orange-500">Trial Ending Soon</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="rounded-[20px] bg-white p-5 shadow-xl dark:bg-navy-800">
-            <h4 className="text-xl font-bold text-navy-700 dark:text-white">
-              Quick Actions
-            </h4>
-            <div className="mt-4 flex flex-col gap-4">
-              <a href="/admin/tenants" className="linear block w-full rounded-xl bg-brand-500 py-3 text-center text-base font-medium text-white transition duration-200 hover:bg-brand-600 active:bg-brand-700 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-300 dark:active:bg-brand-200">
-                + Create New Tenant
-              </a>
-              <a href="/admin/billing" className="linear block w-full rounded-xl bg-gray-100 py-3 text-center text-base font-medium text-navy-700 transition duration-200 hover:bg-gray-200 active:bg-gray-300 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:active:bg-white/30">
-                Manage SaaS Plans
-              </a>
-              <a href="/admin/settings" className="linear block w-full rounded-xl bg-gray-100 py-3 text-center text-base font-medium text-navy-700 transition duration-200 hover:bg-gray-200 active:bg-gray-300 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:active:bg-white/30">
-                View Global Configurations
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+import { MdBusiness, MdGroup, MdCheckCircle, MdPayment } from 'react-icons/md';
+import { requirePlatformAdmin, checkQuery } from 'utils/crm/access';
+import { cardClass } from 'components/crm/Fields';
+import Link from 'next/link';
+export default async function Dashboard() {
+  const {supabase} = await requirePlatformAdmin();
+  const [summary,recent] = await Promise.all([supabase.rpc('platform_summary'),supabase.from('organizations').select('id,name,slug,status').order('created_at',{ascending:false}).limit(10)]);
+  checkQuery(summary.error); checkQuery(recent.error);
+  const data = summary.data;
+  return <div className="flex flex-col gap-5"><h1 className="text-2xl font-bold">Platform overview</h1>
+    <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <Widget icon={<MdBusiness />} title="Organizations" subtitle={String(data.organizations)} />
+      <Widget icon={<MdCheckCircle />} title="Active organizations" subtitle={String(data.active)} />
+      <Widget icon={<MdGroup />} title="Workspace users" subtitle={String(data.members)} />
+      <Widget icon={<MdPayment />} title="Active subscription records" subtitle={String(data.subscriptions)} />
+    </div><div className={cardClass}><h2 className="mb-4 text-xl font-bold">Recent organizations</h2>{recent.data.map(org=><div className="flex justify-between border-b p-3" key={org.id}><span>{org.name}</span><span>{org.status}</span></div>)}{!recent.data.length && <p>No organizations yet.</p>}<Link className="mt-4 block text-brand-500" href="/admin/tenants">Manage organizations</Link></div>
+  </div>;
 }

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 const FreeCard = () => {
   return (
     <div className="relative mt-14 flex w-[256px] justify-center rounded-[20px] bg-gradient-to-br from-[#868CFF] via-[#432CF3] to-brand-500 pb-4">
@@ -32,12 +33,12 @@ const FreeCard = () => {
           Unlock advanced CRM features and boost your sales productivity!
         </p>
 
-        <a
+        <Link
           className="text-medium mt-7 block rounded-full bg-gradient-to-b from-white/50 to-white/10 px-11 py-[12px] text-center text-base text-white hover:bg-gradient-to-b hover:from-white/40 hover:to-white/5 "
           href="/admin/billing"
         >
           View Plans
-        </a>
+        </Link>
       </div>
     </div>
   );

@@ -1,56 +1,26 @@
-import React from 'react';
-
-export default function BillingPage() {
-  return (
-    <div className="mt-3 grid h-full grid-cols-1 gap-5">
-      <h4 className="text-2xl font-bold text-navy-700 dark:text-white">
-        SaaS Plans & Billing
-      </h4>
-
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        {/* Basic Plan */}
-        <div className="flex flex-col items-center rounded-[20px] bg-white p-8 shadow-xl dark:bg-navy-800">
-          <h5 className="text-xl font-bold text-navy-700 dark:text-white">Basic</h5>
-          <p className="mt-2 text-3xl font-bold text-brand-500">₹2,999<span className="text-sm text-gray-600">/mo</span></p>
-          <ul className="mt-5 flex flex-col gap-3 text-center text-gray-600 dark:text-gray-400">
-            <li>Up to 5 Users</li>
-            <li>Basic CRM Features</li>
-            <li>Email Support</li>
-          </ul>
-          <button className="mt-8 w-full rounded-xl bg-gray-100 py-3 font-medium text-navy-700 hover:bg-gray-200 dark:bg-white/10 dark:text-white">
-            Edit Plan
-          </button>
-        </div>
-
-        {/* Pro Plan */}
-        <div className="flex flex-col items-center rounded-[20px] bg-brand-50 p-8 shadow-xl border-2 border-brand-500 dark:bg-navy-900">
-          <div className="mb-2 rounded-full bg-brand-500 px-3 py-1 text-xs font-bold text-white">MOST POPULAR</div>
-          <h5 className="text-xl font-bold text-navy-700 dark:text-white">Pro</h5>
-          <p className="mt-2 text-3xl font-bold text-brand-500">₹9,999<span className="text-sm text-gray-600">/mo</span></p>
-          <ul className="mt-5 flex flex-col gap-3 text-center text-gray-600 dark:text-gray-400">
-            <li>Unlimited Users</li>
-            <li>Advanced Workflows</li>
-            <li>Priority Support</li>
-          </ul>
-          <button className="mt-8 w-full rounded-xl bg-brand-500 py-3 font-medium text-white hover:bg-brand-600">
-            Edit Plan
-          </button>
-        </div>
-        
-        {/* Enterprise */}
-        <div className="flex flex-col items-center rounded-[20px] bg-white p-8 shadow-xl dark:bg-navy-800">
-          <h5 className="text-xl font-bold text-navy-700 dark:text-white">Enterprise</h5>
-          <p className="mt-2 text-3xl font-bold text-brand-500">Custom</p>
-          <ul className="mt-5 flex flex-col gap-3 text-center text-gray-600 dark:text-gray-400">
-            <li>White-labeling</li>
-            <li>Dedicated Database</li>
-            <li>24/7 Phone Support</li>
-          </ul>
-          <button className="mt-8 w-full rounded-xl bg-gray-100 py-3 font-medium text-navy-700 hover:bg-gray-200 dark:bg-white/10 dark:text-white">
-            Edit Plan
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+import { requirePlatformAdmin, checkQuery } from 'utils/crm/access';
+import ActionForm, { Submit } from 'components/crm/ActionForm';
+import { Field, Select, cardClass } from 'components/crm/Fields';
+import { savePlan, saveSubscription } from '../actions';
+function PlanFields({plan}:{plan?:{name:string;price_monthly:number;currency_code:string;is_active:boolean}}) {
+  return <><Field label="Plan name" name="name" required maxLength={100} defaultValue={plan?.name || ''}/><Field label="Monthly price" name="price_monthly" type="number" min="0" max="9999999999.99" step="0.01" required defaultValue={plan?.price_monthly || 0}/><Select label="Currency" name="currency_code" defaultValue={plan?.currency_code || 'INR'}>{['INR','USD','EUR','GBP'].map(c=><option key={c} value={c}>{c}</option>)}</Select><label><input name="is_active" type="checkbox" defaultChecked={plan?.is_active ?? true}/> Active plan</label><Submit>Save plan</Submit></>;
+}
+export default async function Billing() {
+  const {supabase} = await requirePlatformAdmin();
+  const [plans,orgs,subscriptions] = await Promise.all([
+    supabase.from('plans').select('*').order('name'),
+    supabase.from('organizations').select('id,name').order('name'),
+    supabase.from('organization_subscriptions').select('organization_id,plan_id,status'),
+  ]);
+  [plans,orgs,subscriptions].forEach(r=>checkQuery(r.error));
+  return <div className="flex flex-col gap-5"><h1 className="text-2xl font-bold">Plans and subscription records</h1><p className="text-sm text-gray-500">These records track agreed plans. Payments are collected externally.</p>
+    <details className={cardClass}><summary className="cursor-pointer font-bold">Add plan</summary><ActionForm action={savePlan.bind(null,null)} reset className="mt-4"><PlanFields/></ActionForm></details>
+    <div className="grid gap-5 md:grid-cols-2">{plans.data.map(plan=><div key={plan.id} className={cardClass}><ActionForm action={savePlan.bind(null,plan.id)}><PlanFields plan={plan}/></ActionForm></div>)}</div>
+    {orgs.data.length > 0 && plans.data.length > 0 && <div className={cardClass}><h2 className="mb-4 text-xl font-bold">Set subscription</h2><ActionForm action={saveSubscription}>
+      <Select label="Organization" name="organization_id" defaultValue={orgs.data[0].id}>{orgs.data.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</Select>
+      <Select label="Plan" name="plan_id" defaultValue={plans.data[0].id}>{plans.data.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</Select>
+      <Select label="Status" name="status" defaultValue="trial">{['trial','active','cancelled'].map(s=><option key={s} value={s}>{s}</option>)}</Select><Submit>Save subscription</Submit>
+    </ActionForm></div>}
+    <div className={cardClass}><h2 className="mb-4 text-xl font-bold">Subscriptions</h2>{subscriptions.data.map(s=><p className="border-b py-3" key={s.organization_id}>{orgs.data.find(o=>o.id===s.organization_id)?.name} · {plans.data.find(p=>p.id===s.plan_id)?.name} · {s.status}</p>)}{!subscriptions.data.length && <p>No subscription records yet.</p>}</div>
+  </div>;
 }

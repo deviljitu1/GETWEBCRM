@@ -1,7 +1,7 @@
 # getwebcrm
 #### Preview
 
- - [Demo](https://getwebcrm.github.io/getwebcrm/)
+ - [CRM](https://getwebcrm.vercel.app/)
 
 #### Download
  - [Download from getwebcrm](https://getwebcrm.com/themes/getwebcrm/)
@@ -10,13 +10,14 @@
 
 1. Clone Repository
 ```
-git clone https://github.com/getwebcrm/getwebcrm.git
+git clone https://github.com/deviljitu1/GETWEBCRM.git
 ```
 2. Install Dependencies
 ```
-npm i
+npm ci --legacy-peer-deps
 ```
-3. Run the development server:
+3. Copy `.env.example` to `.env.local` and configure your Supabase project. Apply the numbered migrations and set up initial administrator/workspace access as described in [production operations](docs/production-operations.md).
+4. Run the development server (Node 24):
 
 ```bash
 npm run dev

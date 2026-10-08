@@ -1,87 +1,40 @@
-'use client';
-import React from 'react';
-import { MdAdd, MdSearch, MdFilterList } from 'react-icons/md';
-
-export default function Inventory() {
-  return (
-    <div className="pb-8">
-      <div className="mt-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between px-2">
-        <div>
-          <h1 className="text-2xl font-bold text-navy-700 dark:text-white">Property Inventory</h1>
-          <p className="mt-1 text-sm text-gray-500">Manage your projects, towers, and individual units.</p>
-        </div>
-        <div className="flex gap-2">
-          <button className="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-600 transition">
-            <MdAdd /> Add Property
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-[20px] bg-white p-5 shadow-xl dark:bg-navy-800">
-        {/* Filters */}
-        <div className="flex flex-col gap-3 lg:flex-row mb-6">
-          <label className="flex flex-1 items-center gap-2 rounded-lg border border-gray-200 px-3 text-gray-400 dark:border-navy-700">
-            <MdSearch className="text-lg"/>
-            <input placeholder="Search by Project, Unit No, or Client" className="h-10 w-full bg-transparent text-sm text-[#222] dark:text-white outline-none" />
-          </label>
-          <select className="rounded-lg border border-gray-200 px-3 text-sm text-gray-600 dark:border-navy-700 dark:bg-navy-900 dark:text-white">
-            <option>All Projects</option>
-            <option>GrahSiddhi Heights</option>
-            <option>Green Avenue</option>
-          </select>
-          <select className="rounded-lg border border-gray-200 px-3 text-sm text-gray-600 dark:border-navy-700 dark:bg-navy-900 dark:text-white">
-            <option>All Statuses</option>
-            <option>Available</option>
-            <option>Blocked</option>
-            <option>Sold</option>
-          </select>
-        </div>
-
-        {/* Inventory Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left text-sm">
-            <thead className="border-b border-gray-100 text-xs uppercase tracking-wide text-gray-400 dark:border-navy-700">
-              <tr>
-                <th className="px-3 py-3 font-semibold">Unit No.</th>
-                <th className="px-3 py-3 font-semibold">Project</th>
-                <th className="px-3 py-3 font-semibold">Config</th>
-                <th className="px-3 py-3 font-semibold">Price</th>
-                <th className="px-3 py-3 font-semibold">Status</th>
-                <th className="px-3 py-3 font-semibold">Client / Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {/* Row 1 */}
-              <tr className="border-b border-gray-50 dark:border-navy-700 hover:bg-gray-50 dark:hover:bg-navy-700">
-                <td className="px-3 py-4 font-bold text-navy-700 dark:text-white">A-101</td>
-                <td className="px-3 py-4 text-gray-600 dark:text-gray-400">GrahSiddhi Heights</td>
-                <td className="px-3 py-4 text-gray-600 dark:text-gray-400">3 BHK</td>
-                <td className="px-3 py-4 text-gray-600 dark:text-gray-400">₹ 1.2 Cr</td>
-                <td className="px-3 py-4"><span className="rounded-full bg-green-50 text-green-700 px-2.5 py-1 text-xs font-semibold">Available</span></td>
-                <td className="px-3 py-4"><button className="text-sm font-bold text-brand-500">Block Unit</button></td>
-              </tr>
-              {/* Row 2 */}
-              <tr className="border-b border-gray-50 dark:border-navy-700 hover:bg-gray-50 dark:hover:bg-navy-700">
-                <td className="px-3 py-4 font-bold text-navy-700 dark:text-white">B-205</td>
-                <td className="px-3 py-4 text-gray-600 dark:text-gray-400">Green Avenue</td>
-                <td className="px-3 py-4 text-gray-600 dark:text-gray-400">2 BHK</td>
-                <td className="px-3 py-4 text-gray-600 dark:text-gray-400">₹ 85 L</td>
-                <td className="px-3 py-4"><span className="rounded-full bg-orange-50 text-orange-700 px-2.5 py-1 text-xs font-semibold">Blocked</span></td>
-                <td className="px-3 py-4 text-sm text-gray-600 dark:text-gray-400">Rohan Mehta</td>
-              </tr>
-              {/* Row 3 */}
-              <tr className="border-b border-gray-50 dark:border-navy-700 hover:bg-gray-50 dark:hover:bg-navy-700">
-                <td className="px-3 py-4 font-bold text-navy-700 dark:text-white">A-304</td>
-                <td className="px-3 py-4 text-gray-600 dark:text-gray-400">GrahSiddhi Heights</td>
-                <td className="px-3 py-4 text-gray-600 dark:text-gray-400">3 BHK</td>
-                <td className="px-3 py-4 text-gray-600 dark:text-gray-400">₹ 1.25 Cr</td>
-                <td className="px-3 py-4"><span className="rounded-full bg-red-50 text-red-700 px-2.5 py-1 text-xs font-semibold">Sold</span></td>
-                <td className="px-3 py-4 text-sm text-gray-600 dark:text-gray-400">Ankita Patel</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+import Link from 'next/link';
+import { requireOrg, checkQuery } from 'utils/crm/access';
+import { pageNumber } from 'utils/crm/validation';
+import ActionForm, { Submit } from 'components/crm/ActionForm';
+import { Field, Select, cardClass } from 'components/crm/Fields';
+import { addProperty, updateProperty } from '../actions';
+export default async function Inventory({ params, searchParams }: {
+  params: Promise<{ orgSlug: string }>; searchParams: Promise<{ q?: string; status?: string; page?: string }>;
+}) {
+  const {orgSlug} = await params;
+  const { supabase, org, permissions } = await requireOrg(orgSlug,'inventory.read');
+  const filters = await searchParams, page = pageNumber(filters.page), size = 25;
+  const q = typeof filters.q === 'string' ? filters.q.slice(0,100).replace(/[^\p{L}\p{N} .+-]/gu,'') : '';
+  const status = ['available','blocked','sold'].includes(filters.status) ? filters.status : '';
+  let query = supabase.from('property_units').select('*',{count:'exact'}).eq('organization_id',org.id);
+  if (q) query = query.or(`project_name.ilike.%${q}%,unit_number.ilike.%${q}%`);
+  if (status) query = query.eq('status',status);
+  const result = await query.order('created_at',{ascending:false}).order('id').range((page-1)*size,page*size-1);
+  checkQuery(result.error);
+  const url = (n: number) => `/${orgSlug}/inventory?${new URLSearchParams({q,status,page:String(n)})}`;
+  return <div className="flex flex-col gap-5 pb-8"><h1 className="text-2xl font-bold">Property inventory</h1>
+    {permissions.has('inventory.manage') && <details className={cardClass}><summary className="cursor-pointer font-bold">Add property</summary>
+      <ActionForm action={addProperty.bind(null,orgSlug)} reset className="mt-4">
+        <Field label="Project name" name="project_name" required maxLength={160} /><Field label="Unit number" name="unit_number" required maxLength={80} />
+        <Field label="Configuration" name="configuration" maxLength={80} /><Field label={`Listed price (${org.currency_code})`} name="price" type="number" required min="0" max="999999999999.99" step="0.01" /><Submit>Add property</Submit>
+      </ActionForm>
+    </details>}
+    <div className={cardClass}><form className="mb-5 grid gap-3 md:grid-cols-3">
+      <Field label="Project or unit" name="q" defaultValue={q} maxLength={100} /><Select label="Status" name="status" defaultValue={status}><option value="">All statuses</option>{['available','blocked','sold'].map(s=><option key={s} value={s}>{s}</option>)}</Select>
+      <button className="self-end rounded-lg bg-brand-500 p-3 text-white">Apply filters</button>
+    </form><div className="overflow-x-auto"><table className="w-full min-w-[700px] text-left text-sm"><thead><tr>{['Unit','Project','Configuration','Listed price','Status','Action'].map(h=><th key={h} className="border-b p-3">{h}</th>)}</tr></thead><tbody>
+      {result.data.map(unit=><tr key={unit.id} className="border-b"><td className="p-3">{unit.unit_number}</td><td className="p-3">{unit.project_name}</td><td className="p-3">{unit.configuration}</td><td className="p-3">{new Intl.NumberFormat('en-IN',{style:'currency',currency:org.currency_code}).format(unit.price)}</td><td className="p-3">{unit.status}</td>
+        <td className="p-3">{permissions.has('inventory.manage') && <ActionForm action={updateProperty.bind(null,orgSlug,unit.id)}>
+          <input type="hidden" name="previous" value={unit.status} /><Select label="New status" name="status" defaultValue={unit.status}>{['available','blocked','sold'].map(s=><option key={s} value={s}>{s}</option>)}</Select><Submit>Update</Submit>
+        </ActionForm>}</td></tr>)}
+    </tbody></table>{!result.data.length && <p className="p-8 text-center text-gray-500">No matching properties.</p>}</div>
+      <div className="mt-4 flex justify-between text-sm"><span>{result.count || 0} matching units · Page {page}</span><div className="flex gap-4">{page>1 && <Link href={url(page-1)}>Previous</Link>}{page*size < (result.count || 0) && <Link href={url(page+1)}>Next</Link>}</div></div>
     </div>
-  );
+  </div>;
 }

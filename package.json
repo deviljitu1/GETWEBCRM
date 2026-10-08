@@ -41,13 +41,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "lint": "eslint .",
+    "test": "node --experimental-vm-modules --test --test-isolation=none tests/*.test.mjs",
+    "typecheck": "tsc --noEmit --incremental false"
   },
   "browserslist": {
     "production": [

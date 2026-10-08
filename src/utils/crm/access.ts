@@ -1,0 +1,37 @@
+import 'server-only';
+import { cache } from 'react';
+import { notFound, redirect } from 'next/navigation';
+import { createClient } from 'utils/supabase/server';
+import { validSlug } from './validation';
+
+export const requireOrg = cache(async (slug: string, permission?: string) => {
+  if (!validSlug(slug)) notFound();
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect(`/${slug}/login`);
+  const { data: org, error } = await supabase.from('organizations')
+    .select('id,name,slug,email,phone,website,legal_name,status,currency_code').eq('slug', slug).maybeSingle();
+  if (error) throw new Error('Unable to load workspace');
+  if (!org || org.status !== 'active') notFound();
+  const membership = await supabase.from('organization_members').select('role_id')
+    .eq('organization_id', org.id).eq('user_id', user.id).eq('status', 'active').maybeSingle();
+  if (membership.error) throw new Error('Unable to verify workspace access');
+  if (!membership.data) notFound();
+  const grants = await supabase.from('role_permissions').select('permission_key').eq('role_id', membership.data.role_id);
+  if (grants.error) throw new Error('Unable to verify permissions');
+  const permissions = new Set<string>((grants.data || []).map(row => row.permission_key));
+  if (permission && !permissions.has(permission)) notFound();
+  return { supabase, user, org, permissions };
+});
+export const requirePlatformAdmin = cache(async () => {
+  const supabase = await createClient();
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) redirect('/admin/login');
+  const admin = await supabase.rpc('is_platform_admin');
+  if (admin.error) throw new Error('Unable to verify platform access');
+  if (admin.data !== true) notFound();
+  return { supabase, user };
+});
+export function checkQuery(error: { code?: string } | null) {
+  if (error) throw new Error('Unable to load records. Please try again.');
+}

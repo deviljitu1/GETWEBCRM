@@ -1,7 +1,7 @@
 'use client';
 // Layout components
 import { usePathname } from 'next/navigation';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import routes from 'routes';
 import {
   getActiveNavbar,
@@ -19,7 +19,7 @@ export default function Admin({ children }: { children: React.ReactNode }) {
   const [fixed] = useState(false);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  if (isWindowAvailable()) document.documentElement.dir = 'rtl';
+  useEffect(() => { document.documentElement.dir = 'rtl'; }, []);
   return (
     <div className="flex h-full w-full bg-background-100 dark:bg-background-900">
       <Sidebar
