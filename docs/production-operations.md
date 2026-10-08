@@ -4,7 +4,9 @@ Use Node 24 and install with `npm ci --legacy-peer-deps`. Configure the four var
 
 ## Database and initial access
 
-Apply numbered files in `supabase/migrations` in order. For an existing database, apply only unapplied migrations. Migration 00002 preserves existing CRM records, adds permission policies, and enforces tenant relationships on new writes. Review and validate its three `NOT VALID` constraints after repairing any legacy tenant mismatches.
+Apply numbered files in `supabase/migrations` in order. For an existing database, apply only unapplied migrations. Migration 00002 preserves existing CRM records, adds permission policies, and enforces tenant relationships on new writes. Migration 00003 validates legacy tenant relationships and reserves the shared login routes; repair any legacy mismatches before applying it.
+
+Use `/login` as the shared entry point. Authenticated users choose from their active workspace memberships at `/workspaces`. New users without membership see an invitation message. Client-specific `/<workspace>/login` links remain available.
 
 Register and verify the intended administrator's account first. From a trusted SQL session, insert that user's UUID into `public.platform_admins`. For an existing workspace, create its owner membership using the matching organization-specific `owner` role. No user can self-promote. Use `/admin/tenants` to create future workspaces and their verified owners atomically.
 

@@ -19,5 +19,6 @@ export async function GET(request: Request) {
 
   // return the user to an error page with instructions
   const scope = next.split('/')[1]
-  return NextResponse.redirect(new URL(`/${scope === 'admin' ? 'admin' : /^[a-z0-9-]+$/.test(scope) ? scope : 'grahsiddhi'}/login?error=auth-failed`, origin))
+  const login = scope === 'admin' ? '/admin/login' : scope && !['workspaces','login'].includes(scope) && /^[a-z0-9-]+$/.test(scope) ? `/${scope}/login` : '/login'
+  return NextResponse.redirect(new URL(`${login}?error=auth-failed`, origin))
 }

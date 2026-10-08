@@ -1,6 +1,6 @@
 export function validSlug(value: string) {
   return typeof value === 'string' && value.length <= 80 && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(value) &&
-    !['admin', 'auth', 'api', 'rtl'].includes(value);
+    !['admin', 'auth', 'api', 'rtl', 'login', 'workspaces'].includes(value);
 }
 export function uuid(value: unknown): string {
   if (typeof value !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) throw new Error('Invalid record');

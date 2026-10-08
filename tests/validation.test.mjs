@@ -8,7 +8,7 @@ test('redirects remain same-origin and reject protocol-relative or backslash URL
 });
 test('workspace and record identifiers reject reserved routes and invalid IDs', () => {
   assert.ok(validSlug('builder-2'));
-  for (const value of ['admin','auth','api','rtl','../other','UPPER','']) assert.equal(validSlug(value),false);
+  for (const value of ['admin','auth','api','rtl','login','workspaces','../other','UPPER','']) assert.equal(validSlug(value),false);
   assert.throws(()=>uuid('not-a-uuid'));
   assert.equal(uuid('11111111-1111-4111-8111-111111111111'),'11111111-1111-4111-8111-111111111111');
 });
