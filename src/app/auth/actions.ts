@@ -29,15 +29,16 @@ export async function authenticate(scope: string, signup: boolean, _state: Actio
     } else {
       const result = await supabase.auth.signInWithPassword({ email: address, password });
       if (result.error) return { error: 'Invalid email or password' };
+      if (result.data.user.app_metadata?.must_change_password === true) destination = '/auth/password';
     }
     const accepted = await supabase.rpc('accept_pending_invitations');
     if (accepted.error) return { error: 'Unable to complete sign-in. Please try again.' };
-    if (scope === 'admin' || scope === 'login') {
+    if (destination !== '/auth/password' && (scope === 'admin' || scope === 'login')) {
       const admin = await supabase.rpc('is_platform_admin');
       if (admin.error) return { error: 'Unable to verify account access. Please try again.' };
       if (scope === 'admin' && admin.data !== true) return { error: 'This account does not have platform access' };
       if (admin.data === true) destination = '/admin';
-    } else if (scope !== 'login') {
+    } else if (destination !== '/auth/password' && scope !== 'login') {
       const organization = await supabase.from('organizations').select('id').eq('slug', scope).maybeSingle();
       if (organization.error || !organization.data) return { error: 'This account does not have access to this workspace. Contact its administrator.' };
       const member = await supabase.rpc('is_org_member', { target_org_id: organization.data.id });
@@ -82,6 +83,14 @@ export async function changePassword(_state: ActionState, form: FormData): Promi
     if (password !== confirmation) return {error:'Passwords do not match'};
     const result = await supabase.auth.updateUser({password});
     if (result.error) return {error:'Unable to change your password. Sign in again or request a fresh recovery link.'};
+    if (user.app_metadata?.must_change_password === true) {
+      const { createAdminClient } = await import('utils/supabase/admin');
+      const admin = createAdminClient();
+      const updated = await admin.auth.admin.updateUserById(user.id, {
+        app_metadata: { ...user.app_metadata, must_change_password: false },
+      });
+      if (updated.error) return {error:'Password changed, but account setup could not finish. Contact support.'};
+    }
     return {message:'Your CRM password has been updated.'};
   } catch (error) { return {error:error instanceof Error ? error.message : 'Unable to change password'}; }
 }
