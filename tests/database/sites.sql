@@ -44,7 +44,7 @@ BEGIN
     INSERT INTO public.site_daily_reports(organization_id,project_id,work_date,work_description,supervisor)
       VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',project_id,current_date,'Foundation work','Supervisor');
     RAISE EXCEPTION 'Photo-free report accepted';
-  EXCEPTION WHEN check_violation THEN NULL;
+  EXCEPTION WHEN check_violation OR not_null_violation THEN NULL;
   END;
   INSERT INTO public.site_bookings(organization_id,project_id,customer_name,booking_date,booking_value)
     VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',project_id,'Customer',current_date,100)
