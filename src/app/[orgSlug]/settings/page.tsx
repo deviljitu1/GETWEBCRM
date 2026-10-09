@@ -183,7 +183,7 @@ export default async function Settings({
             Add user
           </h3>
           <p className="mb-6 text-sm text-gray-500">
-            {activeMembers} of {org.member_limit} seats used. Create a user with their email and password to grant them immediate access.
+            {activeMembers} of {org.member_limit} seats used. Create a user with a temporary password. They must change it at first login.
           </p>
           {canWrite && seatsAvailable > 0 && (
             <ActionForm action={addMember.bind(null, orgSlug)} reset>
@@ -196,11 +196,12 @@ export default async function Settings({
                   maxLength={254}
                 />
                 <Field
-                  label="Password"
+                  label="Temporary password"
                   name="password"
-                  type="text"
+                  type="password"
                   required
-                  minLength={6}
+                  minLength={12}
+                  maxLength={100}
                 />
                 <Select
                   label="Role"

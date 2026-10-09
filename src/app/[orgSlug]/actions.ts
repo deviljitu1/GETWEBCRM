@@ -1,5 +1,5 @@
 'use server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createAdminClient } from 'utils/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { requireWriteOrg } from 'utils/crm/access';
 import { rateLimit } from 'utils/crm/rate-limit';
@@ -286,50 +286,54 @@ export async function addMember(
     const emailAddr = email(text(form, 'email', 254, true), true);
     const password = text(form, 'password', 100, true);
     const roleId = uuid(text(form, 'role_id', 36, true));
-
-    const adminAuthClient = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    if (password.length < 12)
+      throw new Error('Use a temporary password with at least 12 characters.');
+    const role = await context.supabase.from('roles').select('id,key')
+      .eq('organization_id', context.org.id).eq('id', roleId).maybeSingle();
+    if (role.error || !role.data || role.data.key === 'owner')
+      throw new Error('Choose an available team role. Ownership cannot be assigned here.');
+    const seats = await context.supabase.from('organization_members')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('organization_id', context.org.id).eq('status', 'active');
+    if (seats.error || seats.count === null)
+      throw new Error('Unable to verify available seats. Try again.');
+    if (seats.count >= context.org.member_limit)
+      throw new Error('All seats are in use. Contact your CRM administrator to add more users.');
+    const adminAuthClient = createAdminClient();
 
     const authUser = await adminAuthClient.auth.admin.createUser({
       email: emailAddr,
       password: password,
       email_confirm: true,
+      app_metadata: { must_change_password: true },
     });
 
     if (authUser.error) {
       if (authUser.error.message.includes('already registered')) {
         throw new Error('A user with this email already exists.');
       }
-      throw new Error(`Failed to create user: ${authUser.error.message}`);
+      throw new Error('Unable to create this account. Check the email and password, then try again.');
     }
 
     const userId = authUser.data.user.id;
 
-    // Use adminAuthClient to bypass RLS if needed, or context.supabase if user has permission
     const memberResult = await adminAuthClient
       .from('organization_members')
-      .upsert(
+      .insert(
         {
           organization_id: context.org.id,
           user_id: userId,
           role_id: roleId,
           status: 'active',
-        },
-        { onConflict: 'organization_id,user_id' }
+        }
       );
-    dbError(memberResult.error);
-
-    // Create or update profile using admin client
-    await adminAuthClient
-      .from('profiles')
-      .upsert(
-        { id: userId, full_name: emailAddr.split('@')[0] },
-        { onConflict: 'id' }
-      );
-
-    return 'User created and granted access.';
+    if (memberResult.error) {
+      const cleanup = await adminAuthClient.auth.admin.deleteUser(userId);
+      if (cleanup.error)
+        throw new Error('Account created but workspace access failed. Contact support to complete setup before retrying.');
+      dbError(memberResult.error);
+    }
+    return 'User created. Share the temporary password securely; they must change it at first login.';
   });
 }
 export async function manageMember(
