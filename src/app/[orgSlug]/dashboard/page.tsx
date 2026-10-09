@@ -16,8 +16,8 @@ export default async function Dashboard({
   params: Promise<{ orgSlug: string }>;
 }) {
   const { orgSlug } = await params;
-  const { supabase, org, permissions, canWrite } = await requireOrg(orgSlug);
-  const [summary, followups, visits] = await Promise.all([
+  const { supabase, org, permissions, canWrite, user } = await requireOrg(orgSlug);
+  const [summary, followups, visits, profile] = await Promise.all([
     supabase.rpc('workspace_summary', { org_id: org.id }),
     supabase
       .from('leads')
@@ -34,8 +34,10 @@ export default async function Dashboard({
       .gte('scheduled_at', new Date().toISOString())
       .order('scheduled_at')
       .limit(10),
+    supabase.from('profiles').select('full_name').eq('id', user.id).single(),
   ]);
   [summary, followups, visits].forEach((r) => checkQuery(r.error));
+  const userName = profile.data?.full_name || user.email?.split('@')[0] || 'User';
   const data = summary.data;
   const metrics = [
     {
@@ -84,7 +86,7 @@ export default async function Dashboard({
           <div>
             <p className="text-sm font-semibold text-white/70">{date}</p>
             <h1 className="mt-2 text-3xl font-bold sm:text-4xl">
-              Good to see you, {org.name}
+              Good to see you, {userName}
             </h1>
             <p className="mt-3 max-w-xl text-sm text-white/75">
               Keep your leads moving, plan site visits, and see the full sales
