@@ -13,6 +13,7 @@ export default async function Page() {
     error,
   } = await supabase.auth.getUser();
   if (error || !user) redirect('/login');
+  if (user.app_metadata?.must_change_password === true) redirect('/auth/password');
   const admin = await supabase.rpc('is_platform_admin');
   checkQuery(admin.error);
   if (admin.data === true) redirect('/admin');

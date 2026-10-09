@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { canReadLeads } from 'utils/crm/navigation-access';
 import {
   MdArrowForward,
   MdEvent,
@@ -39,8 +40,9 @@ export default async function Dashboard({
   [summary, followups, visits].forEach((r) => checkQuery(r.error));
   const userName = profile.data?.full_name || user.email?.split('@')[0] || 'User';
   const data = summary.data;
+  const showLeads = canReadLeads(permissions);
   const metrics = [
-    {
+    ...(showLeads ? [{
       label: 'Accessible leads',
       value: data.leads,
       detail: 'Across your pipeline',
@@ -61,6 +63,7 @@ export default async function Dashboard({
       icon: MdEvent,
       accent: 'bg-cyan-500',
     },
+    ] : []),
     ...(permissions.has('inventory.read')
       ? [
           {
@@ -94,7 +97,7 @@ export default async function Dashboard({
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Link href={`/${orgSlug}/leads`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-navy-700 shadow-lg transition-transform hover:-translate-y-0.5">Open leads <MdArrowForward /></Link>
+            {showLeads && <Link href={`/${orgSlug}/leads`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-navy-700 shadow-lg transition-transform hover:-translate-y-0.5">Open leads <MdArrowForward /></Link>}
             {permissions.has('sites.read') && <Link href={`/${orgSlug}/sites`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/50 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10">Site operations <MdArrowForward /></Link>}
           </div>
         </div>
@@ -128,7 +131,7 @@ export default async function Dashboard({
           );
         })}
       </section>
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      {showLeads && <><section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <article className={cardClass}>
           <div className="mb-5 flex items-center justify-between">
             <div>
@@ -247,7 +250,7 @@ export default async function Dashboard({
             </p>
           )}
         </div>
-      </article>
+      </article></>}
     </div>
   );
 }

@@ -17,7 +17,7 @@ export async function saveAccount(_state: ActionState, form: FormData): Promise<
       phone: phone(text(form, 'phone', 40)),
     }).eq('id', user.id).select('id').single();
     if (result.error) throw new Error('Unable to save your account.');
-    revalidatePath('/workspaces');
+    revalidatePath('/', 'layout');
     return { message: 'Account updated.' };
   } catch (cause) {
     return { error: cause instanceof Error ? cause.message : 'Unable to save account.' };

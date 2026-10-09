@@ -9,54 +9,50 @@ import Navbar from 'components/navbar';
 import Footer from 'components/footer/Footer';
 import { getActiveNavbar, getActiveRoute } from 'utils/navigation';
 import { createClient } from 'utils/supabase/client';
+import { canReadLeads, canSeeWorkspaceRoute } from 'utils/crm/navigation-access';
 
 export default function WorkspaceShell({ children, scope }: { children: ReactNode; scope: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [userPerms, setUserPerms] = useState<Set<string>>(new Set());
-  const [loadingRole, setLoadingRole] = useState(true);
-
+  const [access, setAccess] = useState<{ scope: string; permissions: Set<string> } | null>(null);
+  const userPerms = access?.scope === scope ? access.permissions : new Set<string>();
   useEffect(() => {
     document.documentElement.dir = 'ltr';
-    if (scope === 'admin' || pathname === `/${scope}/login`) {
-      setLoadingRole(false);
-      return;
-    }
+    if (scope === 'admin' || pathname === '/' + scope + '/login') return;
+    let cancelled = false;
     const loadRole = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoadingRole(false); return; }
-      
-      const { data: org } = await supabase.from('organizations').select('id').eq('slug', scope).single();
-      if (!org) { setLoadingRole(false); return; }
-
-      const { data: member } = await supabase.from('organization_members').select('role_id').eq('organization_id', org.id).eq('user_id', user.id).eq('status', 'active').single();
-      if (!member) { setLoadingRole(false); return; }
-
-      const { data: role } = await supabase.from('roles').select('key').eq('id', member.role_id).single();
-      const { data: perms } = await supabase.from('role_permissions').select('permission_key').eq('role_id', member.role_id);
-      
-      setIsAdmin(role?.key === 'owner' || role?.key === 'admin');
-      setUserPerms(new Set(perms?.map(p => p.permission_key) || []));
-      setLoadingRole(false);
+      const permissions = new Set<string>();
+      try {
+        const supabase = createClient();
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user) return;
+        const { data: org } = await supabase.from('organizations').select('id').eq('slug', scope).eq('status', 'active').maybeSingle();
+        if (!org) return;
+        const { data: member } = await supabase.from('organization_members').select('role_id').eq('organization_id', org.id).eq('user_id', user.id).eq('status', 'active').maybeSingle();
+        if (member) {
+          const { data: perms, error: grantError } = await supabase.from('role_permissions').select('permission_key').eq('role_id', member.role_id);
+          if (!grantError) perms?.forEach(p => permissions.add(p.permission_key));
+        } else {
+          const support = await supabase.rpc('has_support_access', { target_org_id: org.id });
+          if (!support.error && support.data === true) ['leads.read.all', 'inventory.read', 'sites.read'].forEach(p => permissions.add(p));
+        }
+      } finally {
+        if (!cancelled) setAccess({ scope, permissions });
+      }
     };
-    loadRole();
+    void loadRole().catch(() => {});
+    return () => { cancelled = true; };
   }, [scope, pathname]);
 
   if (pathname === `/${scope}/login`) return <div className="min-h-screen bg-white dark:bg-navy-900">{children}</div>;
   
   const baseLinks = scope === 'admin' ? adminRoutes : routes.map(route => ({ ...route, layout: `/${scope}` }));
-  const links = loadingRole ? baseLinks.filter((r: any) => !r.adminOnly && !r.requiredPermission) : baseLinks.filter((r: any) => {
-    if (r.adminOnly && !isAdmin) return false;
-    if (r.requiredPermission && !userPerms.has(r.requiredPermission)) return false;
-    return true;
-  });
+  const links = scope === 'admin' ? baseLinks : baseLinks.filter(route => canSeeWorkspaceRoute(route.path, userPerms));
   return <div className="flex h-screen w-full overflow-hidden bg-background-100 dark:bg-background-900">
     <Sidebar routes={links} open={open} setOpen={setOpen} collapsed={collapsed} setCollapsed={setCollapsed} scope={scope} />
     <div className="min-w-0 w-full font-dm h-full overflow-y-auto"><main className={`mx-2.5 min-w-0 md:pr-2 transition-all duration-300 ${collapsed ? 'xl:ml-[115px]' : 'xl:ml-[323px]'}`}>
-      <Navbar navigationOpen={open} onOpenSidenav={() => setOpen(!open)} brandText={getActiveRoute(links, pathname)} secondary={getActiveNavbar(links, pathname)} showSettings={isAdmin} />
+      <Navbar navigationOpen={open} onOpenSidenav={() => setOpen(!open)} brandText={getActiveRoute(links, pathname)} secondary={getActiveNavbar(links, pathname)} showSettings={scope === 'admin' || userPerms.has('settings.manage')} showLeadSearch={scope !== 'admin' && canReadLeads(userPerms)} />
       <div className="mx-auto min-h-[calc(100vh-150px)] p-2 pt-10 text-navy-700 dark:text-white">{children}</div>
       <div className="p-3"><Footer /></div>
     </main></div>

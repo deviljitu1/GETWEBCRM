@@ -64,7 +64,8 @@ export default async function Sites({ params, searchParams }: {
   const { orgSlug } = await params;
   const requested = (await searchParams).view;
   const view: View = views.some(([key]) => key === requested) ? requested as View : 'dashboard';
-  const { supabase, org, canWrite } = await requireOrg(orgSlug,'sites.read');
+  const { supabase, org, canWrite: paidAccess, permissions } = await requireOrg(orgSlug,'sites.read');
+  const canWrite = paidAccess && permissions.has('sites.manage');
   const [categoryResult, projectResult, contractorResult, materialResult, bookingResult] = await Promise.all([
     supabase.from('site_categories').select('id,kind,name').eq('organization_id',org.id).eq('is_active',true).order('name').limit(250),
     supabase.from('site_projects').select('id,name,current_stage,status,site_location,site_incharge,site_supervisor,start_date,target_completion_date,total_units,completed_percent,pending_work,remarks').eq('organization_id',org.id).order('created_at',{ascending:false}).limit(100),
@@ -134,7 +135,7 @@ export default async function Sites({ params, searchParams }: {
     <nav aria-label="Site operations" className="flex gap-2 overflow-x-auto rounded-2xl bg-white p-2 shadow-sm dark:bg-navy-800">
       {views.map(([key,name]) => <Link key={key} href={`/${orgSlug}/sites?view=${key}`} className={`whitespace-nowrap rounded-xl px-4 py-3 text-sm font-semibold ${view === key ? 'bg-brand-500 text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-navy-700'}`}>{name}</Link>)}
     </nav>
-    {!canWrite && <ReadOnlyNotice orgSlug={orgSlug} />}
+    {!paidAccess && <ReadOnlyNotice orgSlug={orgSlug} />}
 
     {view === 'dashboard' && <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
       <MetricGroup title="Projects" items={[["Total projects",summary.projects],["Active sites",summary.active_sites],["Completed sites",summary.completed_sites],["Delayed sites",summary.delayed_sites]]} />

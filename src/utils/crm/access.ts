@@ -12,6 +12,7 @@ export const requireOrg = cache(async (slug: string, permission?: string) => {
     error: authError,
   } = await supabase.auth.getUser();
   if (authError || !user) redirect(`/${slug}/login`);
+  if (user.app_metadata?.must_change_password === true) redirect('/auth/password');
   const { data: org, error } = await supabase
     .from('organizations')
     .select('id,name,slug,email,phone,website,legal_name,status,currency_code,member_limit')
@@ -27,6 +28,11 @@ export const requireOrg = cache(async (slug: string, permission?: string) => {
     .eq('status', 'active')
     .maybeSingle();
   if (membership.error) throw new Error('Unable to verify workspace access');
+  if (!membership.data) {
+    const admin = await supabase.rpc('is_platform_admin');
+    if (admin.error) throw new Error('Unable to verify workspace access');
+    if (admin.data !== true) notFound();
+  }
   const support = !membership.data
     ? await supabase.rpc('has_support_access', { target_org_id: org.id })
     : null;

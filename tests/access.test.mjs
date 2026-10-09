@@ -30,6 +30,19 @@ async function access({user = {id:'member'},org = {id:'org',status:'active'},mem
 test('unauthenticated requests redirect to the workspace login',async()=>{
   const dal=await access({user:null});await assert.rejects(dal.requireOrg('tenant-a'),/REDIRECT:\/tenant-a\/login/);
 });
+
+test('temporary-password accounts cannot bypass setup through a workspace URL',async()=>{
+  const dal=await access({user:{id:'member',app_metadata:{must_change_password:true}}});
+  await assert.rejects(dal.requireOrg('tenant-a'),/REDIRECT:\/auth\/password/);
+});
+
+test('support access is read-only and excludes workspace administration',async()=>{
+  const dal=await access({membership:null,admin:true});
+  const context=await dal.requireOrg('tenant-a','sites.read');
+  assert.equal(context.canWrite,false);
+  await assert.rejects(dal.requireOrg('tenant-a','settings.manage'),/NOT_FOUND/);
+  await assert.rejects(dal.requireWriteOrg('tenant-a','sites.read'),/read-only/);
+});
 test('tenant access rejects unavailable, suspended and nonmember workspaces',async()=>{
   for(const setup of [{org:null},{org:{id:'org',status:'suspended'}},{membership:null}]) {
     const dal=await access(setup);await assert.rejects(dal.requireOrg('tenant-a'),/NOT_FOUND/);

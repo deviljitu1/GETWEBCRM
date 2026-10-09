@@ -17,13 +17,15 @@ const Navbar = ({
   onOpenSidenav,
   brandText,
   navigationOpen = false,
-  showSettings,
+  showSettings = false,
+  showLeadSearch = false,
 }: {
   onOpenSidenav: () => void;
   brandText: string;
   secondary?: boolean | string;
   navigationOpen?: boolean;
   showSettings?: boolean;
+  showLeadSearch?: boolean;
 }) => {
   const scope = usePathname()?.split('/')[1] || 'login';
   const [darkmode, setDarkmode] = useState(false);
@@ -49,7 +51,7 @@ const Navbar = ({
         </div>
       </div>
       <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
-        {scope !== 'admin' && (
+        {showLeadSearch && (
           <form
             action={`/${scope}/leads`}
             className="group relative flex min-h-11 flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 text-navy-700 transition-all focus-within:border-brand-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-500/10 dark:border-navy-600 dark:bg-navy-900 dark:text-white sm:w-[290px] sm:flex-none"
@@ -85,7 +87,7 @@ const Navbar = ({
             <RiMoonFill className="h-5 w-5" />
           )}
         </button>
-        {showSettings !== false && (
+        {showSettings && (
           <Link
             className="flex h-11 w-11 items-center justify-center rounded-full text-navy-700 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-navy-700"
             href={`/${scope}/settings`}
