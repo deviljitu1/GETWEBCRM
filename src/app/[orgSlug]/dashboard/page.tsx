@@ -59,7 +59,7 @@ export default async function Dashboard({
       value: data.visits,
       detail: 'Scheduled for the next 7 days',
       icon: MdEvent,
-      accent: 'bg-sky-500',
+      accent: 'bg-cyan-500',
     },
     ...(permissions.has('inventory.read')
       ? [
@@ -68,7 +68,7 @@ export default async function Dashboard({
             value: data.units,
             detail: 'Ready to offer',
             icon: MdHouse,
-            accent: 'bg-emerald-500',
+            accent: 'bg-green-500',
           },
         ]
       : []),
