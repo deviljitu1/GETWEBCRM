@@ -58,7 +58,7 @@ const Navbar = ({
               aria-label="Search leads"
               maxLength={100}
               placeholder="Search leads, phone, or property…"
-              className="bg-transparent min-w-0 flex-1 text-sm outline-none placeholder:text-gray-400"
+              className="!bg-transparent min-w-0 flex-1 text-sm outline-none placeholder:text-gray-400"
             />
             <button
               aria-label="Search leads"
