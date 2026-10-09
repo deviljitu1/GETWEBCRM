@@ -31,13 +31,14 @@ const routes = [
     icon: <MdConstruction className="h-6 w-6" />,
   },
   {
-    name: 'Subscription', layout: '/workspace', path: 'billing', icon: <MdPayment className="h-6 w-6" />,
+    name: 'Subscription', layout: '/workspace', path: 'billing', icon: <MdPayment className="h-6 w-6" />, adminOnly: true,
   },
   {
     name: 'Settings',
     layout: '/grahsiddhi',
     path: 'settings',
     icon: <MdSettings className="h-6 w-6" />,
+    adminOnly: true,
   },
   {
     name: 'My Account',

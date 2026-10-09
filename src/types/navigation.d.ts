@@ -7,6 +7,7 @@ export interface IRoute {
   items?: any;
   path: string;
   secondary?: boolean | undefined;
+  adminOnly?: boolean;
 }
 interface RoutesType {
   name: string;
@@ -14,4 +15,5 @@ interface RoutesType {
   icon: JSX.Element | string;
   path: string;
   secondary?: boolean | undefined;
+  adminOnly?: boolean;
 }
