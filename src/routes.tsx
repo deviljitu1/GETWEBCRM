@@ -23,12 +23,14 @@ const routes = [
     layout: '/grahsiddhi',
     path: 'inventory',
     icon: <MdApartment className="h-6 w-6" />,
+    requiredPermission: 'inventory.read',
   },
   {
     name: 'Site Operations',
     layout: '/grahsiddhi',
     path: 'sites',
     icon: <MdConstruction className="h-6 w-6" />,
+    requiredPermission: 'sites.read',
   },
   {
     name: 'Subscription', layout: '/workspace', path: 'billing', icon: <MdPayment className="h-6 w-6" />, adminOnly: true,

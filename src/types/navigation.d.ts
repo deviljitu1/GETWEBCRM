@@ -8,6 +8,7 @@ export interface IRoute {
   path: string;
   secondary?: boolean | undefined;
   adminOnly?: boolean;
+  requiredPermission?: string;
 }
 interface RoutesType {
   name: string;
@@ -16,4 +17,5 @@ interface RoutesType {
   path: string;
   secondary?: boolean | undefined;
   adminOnly?: boolean;
+  requiredPermission?: string;
 }
