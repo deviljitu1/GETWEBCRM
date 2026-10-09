@@ -22,6 +22,7 @@ const Navbar = ({
   brandText: string;
   secondary?: boolean | string;
   navigationOpen?: boolean;
+  showSettings?: boolean;
 }) => {
   const scope = usePathname()?.split('/')[1] || 'login';
   const [darkmode, setDarkmode] = useState(false);
@@ -83,13 +84,15 @@ const Navbar = ({
             <RiMoonFill className="h-5 w-5" />
           )}
         </button>
-        <Link
-          className="flex h-11 w-11 items-center justify-center rounded-full text-navy-700 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-navy-700"
-          href={`/${scope}/settings`}
-          title="Settings"
-        >
-          <FiSettings className="h-5 w-5" />
-        </Link>
+        {showSettings !== false && (
+          <Link
+            className="flex h-11 w-11 items-center justify-center rounded-full text-navy-700 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-navy-700"
+            href={`/${scope}/settings`}
+            title="Settings"
+          >
+            <FiSettings className="h-5 w-5" />
+          </Link>
+        )}
         <Link
           className="flex h-11 w-11 items-center justify-center rounded-full text-navy-700 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-navy-700"
           href="/auth/password"
