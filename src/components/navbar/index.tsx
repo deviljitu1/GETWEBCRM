@@ -17,6 +17,7 @@ const Navbar = ({
   onOpenSidenav,
   brandText,
   navigationOpen = false,
+  showSettings,
 }: {
   onOpenSidenav: () => void;
   brandText: string;
