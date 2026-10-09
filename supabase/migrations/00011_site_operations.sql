@@ -10,7 +10,7 @@ DECLARE role_key text;
 BEGIN
   IF NEW.permission_key NOT IN ('sites.read','sites.manage') THEN RETURN NEW; END IF;
   SELECT key INTO role_key FROM public.roles WHERE id=NEW.role_id;
-  IF (NEW.permission_key='sites.read' AND role_key IN ('owner','admin','site_supervisor','sales_manager','viewer'))
+  IF (NEW.permission_key='sites.read' AND role_key IN ('owner','admin','site_supervisor','accountant'))
     OR (NEW.permission_key='sites.manage' AND role_key IN ('owner','admin','site_supervisor')) THEN
     RETURN NEW;
   END IF;
@@ -26,7 +26,7 @@ BEGIN
   IF NEW.organization_id IS NULL THEN RETURN NEW; END IF;
   INSERT INTO public.role_permissions(role_id,permission_key)
   SELECT NEW.id, p.key FROM public.permissions p
-  WHERE (p.key = 'sites.read' AND NEW.key IN ('owner','admin','site_supervisor','sales_manager','viewer'))
+  WHERE (p.key = 'sites.read' AND NEW.key IN ('owner','admin','site_supervisor','accountant'))
      OR (p.key = 'sites.manage' AND NEW.key IN ('owner','admin','site_supervisor'))
   ON CONFLICT DO NOTHING;
   RETURN NEW;
@@ -40,7 +40,7 @@ INSERT INTO public.roles(organization_id,key,name,is_system)
   ON CONFLICT (organization_id,key) DO NOTHING;
 INSERT INTO public.role_permissions(role_id,permission_key)
   SELECT r.id,p.key FROM public.roles r CROSS JOIN public.permissions p
-  WHERE (p.key='sites.read' AND r.key IN ('owner','admin','site_supervisor','sales_manager','viewer'))
+  WHERE (p.key='sites.read' AND r.key IN ('owner','admin','site_supervisor','accountant'))
      OR (p.key='sites.manage' AND r.key IN ('owner','admin','site_supervisor'))
   ON CONFLICT DO NOTHING;
 
@@ -121,7 +121,8 @@ CREATE TABLE public.site_daily_reports (
   work_description text NOT NULL CHECK (length(trim(work_description)) BETWEEN 1 AND 4000),
   location_floor text NOT NULL DEFAULT '', labour_count integer NOT NULL DEFAULT 0 CHECK (labour_count >= 0),
   contractor_id uuid, material_used text NOT NULL DEFAULT '', work_completed text NOT NULL DEFAULT '',
-  pending_work text NOT NULL DEFAULT '', supervisor text NOT NULL DEFAULT '', photo_paths text[] NOT NULL DEFAULT '{}',
+  pending_work text NOT NULL DEFAULT '', supervisor text NOT NULL CHECK (length(trim(supervisor)) > 0),
+  photo_paths text[] NOT NULL CHECK (cardinality(photo_paths) BETWEEN 1 AND 3),
   remarks text NOT NULL DEFAULT '', created_by uuid NOT NULL DEFAULT auth.uid() REFERENCES auth.users(id),
   created_at timestamptz NOT NULL DEFAULT now(),
   FOREIGN KEY (organization_id,project_id) REFERENCES public.site_projects(organization_id,id),

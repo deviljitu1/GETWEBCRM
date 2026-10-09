@@ -11,7 +11,8 @@ type Context = Awaited<ReturnType<typeof requireWriteOrg>>;
 function date(form: FormData, key: string, required = false) {
   const value = text(form, key, 10, required);
   if (!value) return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) !== value)
+  const parsed = new Date(`${value}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value)
     throw new Error(`Enter a valid ${key.replaceAll('_', ' ')}.`);
   return value;
 }
