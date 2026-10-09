@@ -28,6 +28,15 @@ export async function setOrganizationStatus(id: string, _state: ActionState, for
     check(result.error); revalidatePath('/','layout'); return 'Workspace status updated';
   });
 }
+export async function setWorkspaceMemberLimit(id: string, _state: ActionState, form: FormData) {
+  const {supabase,user} = await requirePlatformAdmin();
+  return save(user.id,async()=>{
+    const seats = Number(text(form,'member_limit',4,true));
+    if (!Number.isInteger(seats) || seats < 1 || seats > 1000) throw new Error('Set a member limit between 1 and 1000');
+    const result = await supabase.rpc('set_workspace_member_limit',{org_id:uuid(id),seats});
+    check(result.error); return 'Workspace member limit updated';
+  });
+}
 export async function savePlan(id: string | null, _state: ActionState, form: FormData) {
   const {supabase,user} = await requirePlatformAdmin();
   return save(user.id,async()=>{

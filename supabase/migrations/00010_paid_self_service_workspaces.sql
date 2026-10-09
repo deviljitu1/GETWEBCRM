@@ -1,6 +1,6 @@
 BEGIN;
 
-CREATE FUNCTION public.create_self_service_organization(
+CREATE OR REPLACE FUNCTION public.create_self_service_organization(
   org_name text,
   org_slug text,
   org_email text,
@@ -14,6 +14,13 @@ BEGIN
     SELECT 1 FROM auth.users WHERE id = auth.uid() AND email_confirmed_at IS NOT NULL
   ) THEN
     RAISE EXCEPTION 'Sign in with a verified account first' USING ERRCODE = '42501';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM public.organization_members m
+    JOIN public.roles r ON r.id = m.role_id
+    WHERE m.user_id = auth.uid() AND r.key = 'owner'
+  ) THEN
+    RAISE EXCEPTION 'You already own a workspace' USING ERRCODE = 'P0001';
   END IF;
   IF length(trim(org_name)) NOT BETWEEN 1 AND 160
     OR org_slug !~ '^[a-z0-9]+(-[a-z0-9]+)*$'
@@ -38,10 +45,10 @@ BEGIN
   SELECT id INTO owner_role FROM public.roles WHERE organization_id = org_id AND key = 'owner';
   INSERT INTO public.organization_members(organization_id,user_id,role_id)
     VALUES(org_id,auth.uid(),owner_role);
+  INSERT INTO public.billing_settings(organization_id,payment_required)
+    VALUES(org_id,true);
   RETURN org_id;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.create_self_service_organization(text,text,text,text,text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.create_self_service_organization(text,text,text,text,text) TO authenticated;
 COMMIT;

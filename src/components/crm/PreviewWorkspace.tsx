@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { signOut } from 'app/auth/actions';
 import { createWorkspace } from 'app/workspaces/actions';
 import ActionForm, { Submit } from './ActionForm';
+import AccountProfile from './AccountProfile';
 import {
   MdAdd,
   MdApartment,
@@ -15,6 +16,8 @@ import {
   MdBusiness,
   MdMenu,
   MdLogout,
+  MdAccountCircle,
+  MdConstruction,
 } from 'react-icons/md';
 
 type Plan = { name: string; price_monthly: number; currency_code: string } | null;
@@ -25,8 +28,8 @@ const sampleLeads = [
   { name: 'Rohan Patel', interest: 'Villa · Mowa', stage: 'Site visit' },
 ];
 
-export default function PreviewWorkspace({ email, plan }: { email?: string | null; plan: Plan }) {
-  const [tab, setTab] = useState<'dashboard' | 'leads' | 'inventory'>(
+export default function PreviewWorkspace({ email, plan, profile }: { email?: string | null; plan: Plan; profile: { full_name: string; phone: string | null } }) {
+  const [tab, setTab] = useState<'dashboard' | 'leads' | 'inventory' | 'sites' | 'account'>(
     'dashboard',
   );
   const [subscribe, setSubscribe] = useState(false);
@@ -36,6 +39,8 @@ export default function PreviewWorkspace({ email, plan }: { email?: string | nul
     { key: 'dashboard' as const, name: 'Dashboard', icon: MdDashboard },
     { key: 'leads' as const, name: 'Leads', icon: MdPeople },
     { key: 'inventory' as const, name: 'Inventory', icon: MdApartment },
+    { key: 'sites' as const, name: 'Site Operations', icon: MdConstruction },
+    { key: 'account' as const, name: 'My Account', icon: MdAccountCircle },
   ];
   return (
     <main className="min-h-screen bg-background-100 text-navy-700 dark:bg-background-900 dark:text-white">
@@ -262,6 +267,14 @@ export default function PreviewWorkspace({ email, plan }: { email?: string | nul
               </div>
             </section>
           )}
+          {tab === 'account' && <div className="mt-5"><AccountProfile email={email || ''} name={profile.full_name} phone={profile.phone} /></div>}
+          {tab === 'sites' && <section className="mt-5 rounded-2xl bg-white p-5 shadow-sm dark:bg-navy-800">
+            <p className="text-xs font-semibold uppercase tracking-wide text-brand-500">Construction management</p>
+            <h2 className="mt-1 text-2xl font-bold">Site operations</h2>
+            <p className="mt-2 text-sm text-gray-500">Track projects, daily photo reports, materials, labour, expenses, tasks and sales collections for each site.</p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{['Project master','Daily site reports','Material stock','Labour & contractors','Site expenses','Tasks & collections'].map(name=><div key={name} className="rounded-xl border border-gray-200 p-4 text-sm font-semibold dark:border-navy-600">{name}</div>)}</div>
+            <button onClick={request} className="mt-5 rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white">Create your workspace</button>
+          </section>}
         </div>
       </div>
       {subscribe && (

@@ -14,7 +14,7 @@ export const requireOrg = cache(async (slug: string, permission?: string) => {
   if (authError || !user) redirect(`/${slug}/login`);
   const { data: org, error } = await supabase
     .from('organizations')
-    .select('id,name,slug,email,phone,website,legal_name,status,currency_code')
+    .select('id,name,slug,email,phone,website,legal_name,status,currency_code,member_limit')
     .eq('slug', slug)
     .maybeSingle();
   if (error) throw new Error('Unable to load workspace');

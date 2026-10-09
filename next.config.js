@@ -7,6 +7,7 @@
 //   '@fullcalendar/react',
 
 const nextConfig = {
+  experimental: { serverActions: { bodySizeLimit: '4mb' } },
   async headers() {
     return [{
       source: '/:path*', headers: [

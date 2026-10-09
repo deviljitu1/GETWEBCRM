@@ -48,6 +48,8 @@ export default async function Settings({
         )
     : { data: [], error: null };
   checkQuery(profiles.error);
+  const activeMembers = members.data.filter((member) => member.status === 'active').length;
+  const seatsAvailable = org.member_limit - activeMembers;
   return (
     <div className="flex flex-col gap-5 pb-8">
       <h1 className="text-2xl font-bold">Workspace settings</h1>
@@ -182,10 +184,9 @@ export default async function Settings({
             Invite user
           </h3>
           <p className="mb-6 text-sm text-gray-500">
-            Save an invitation, then share this workspace’s login URL. Access
-            requires verification of the invited email.
+            {activeMembers} of {org.member_limit} seats used. Save an invitation, then share this workspace’s login URL. Access requires verification of the invited email.
           </p>
-          {canWrite && (
+          {canWrite && seatsAvailable > 0 && (
             <ActionForm action={inviteMember.bind(null, orgSlug)} reset>
               <div className="flex flex-col gap-4">
                 <Field
@@ -213,6 +214,11 @@ export default async function Settings({
                 <Submit>Save invitation</Submit>
               </div>
             </ActionForm>
+          )}
+          {canWrite && seatsAvailable <= 0 && (
+            <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">
+              All {org.member_limit} seats are in use. Contact your CRM administrator to add more users.
+            </p>
           )}
           <h3 className="mb-2 mt-8 font-bold text-navy-700 dark:text-white">
             Pending invitations

@@ -91,12 +91,10 @@ export default async function Dashboard({
               picture from one workspace.
             </p>
           </div>
-          <Link
-            href={`/${orgSlug}/leads`}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-navy-700 shadow-lg transition-transform hover:-translate-y-0.5"
-          >
-            Open leads <MdArrowForward />
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link href={`/${orgSlug}/leads`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-navy-700 shadow-lg transition-transform hover:-translate-y-0.5">Open leads <MdArrowForward /></Link>
+            {permissions.has('sites.read') && <Link href={`/${orgSlug}/sites`} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/50 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10">Site operations <MdArrowForward /></Link>}
+          </div>
         </div>
       </section>
       {!canWrite && <ReadOnlyNotice orgSlug={orgSlug} />}

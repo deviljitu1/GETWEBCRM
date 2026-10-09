@@ -32,8 +32,14 @@ export default async function Page() {
         .order('name')
     : { data: [], error: null };
   checkQuery(organizations.error);
-  if (!organizations.data?.length)
-    return <PreviewWorkspace email={user.email} plan={await getMonthlyPlan()} />;
+  if (!organizations.data?.length) {
+    const [plan, profile] = await Promise.all([
+      getMonthlyPlan(),
+      supabase.from('profiles').select('full_name,phone').eq('id', user.id).single(),
+    ]);
+    checkQuery(profile.error);
+    return <PreviewWorkspace email={user.email} plan={plan} profile={profile.data} />;
+  }
   return (
     <main className="min-h-screen bg-background-100 px-5 py-16 text-navy-700 dark:bg-navy-900 dark:text-white">
       <div className="mx-auto max-w-xl">
