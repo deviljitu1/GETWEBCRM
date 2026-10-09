@@ -45,7 +45,7 @@ export default function WorkspaceShell({ children, scope }: { children: ReactNod
   if (pathname === `/${scope}/login`) return <div className="min-h-screen bg-white dark:bg-navy-900">{children}</div>;
   
   const baseLinks = scope === 'admin' ? adminRoutes : routes.map(route => ({ ...route, layout: `/${scope}` }));
-  const links = loadingRole ? baseLinks.filter(r => !r.adminOnly) : baseLinks.filter(r => !r.adminOnly || isAdmin);
+  const links = loadingRole ? baseLinks.filter((r: any) => !r.adminOnly) : baseLinks.filter((r: any) => !r.adminOnly || isAdmin);
   return <div className="flex h-screen w-full overflow-hidden bg-background-100 dark:bg-background-900">
     <Sidebar routes={links} open={open} setOpen={setOpen} collapsed={collapsed} setCollapsed={setCollapsed} scope={scope} />
     <div className="min-w-0 w-full font-dm h-full overflow-y-auto"><main className={`mx-2.5 min-w-0 md:pr-2 transition-all duration-300 ${collapsed ? 'xl:ml-[115px]' : 'xl:ml-[323px]'}`}>
