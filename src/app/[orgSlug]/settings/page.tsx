@@ -2,10 +2,9 @@ import { requireOrg, checkQuery } from 'utils/crm/access';
 import ActionForm, { Submit } from 'components/crm/ActionForm';
 import { Field, Select, cardClass } from 'components/crm/Fields';
 import {
-  inviteMember,
+  addMember,
   saveSettings,
   manageMember,
-  revokeInvitation,
 } from '../actions';
 import ReadOnlyNotice from 'components/crm/ReadOnlyNotice';
 export default async function Settings({
@@ -181,20 +180,27 @@ export default async function Settings({
             </div>
           ))}
           <h3 className="mb-2 mt-6 font-bold text-navy-700 dark:text-white">
-            Invite user
+            Add user
           </h3>
           <p className="mb-6 text-sm text-gray-500">
-            {activeMembers} of {org.member_limit} seats used. Save an invitation, then share this workspace’s login URL. Access requires verification of the invited email.
+            {activeMembers} of {org.member_limit} seats used. Create a user with their email and password to grant them immediate access.
           </p>
           {canWrite && seatsAvailable > 0 && (
-            <ActionForm action={inviteMember.bind(null, orgSlug)} reset>
+            <ActionForm action={addMember.bind(null, orgSlug)} reset>
               <div className="flex flex-col gap-4">
                 <Field
-                  label="Invited email"
+                  label="Email (User ID)"
                   name="email"
                   type="email"
                   required
                   maxLength={254}
+                />
+                <Field
+                  label="Password"
+                  name="password"
+                  type="text"
+                  required
+                  minLength={6}
                 />
                 <Select
                   label="Role"
@@ -211,7 +217,7 @@ export default async function Settings({
                 </Select>
               </div>
               <div className="mt-6">
-                <Submit>Save invitation</Submit>
+                <Submit>Create user</Submit>
               </div>
             </ActionForm>
           )}
@@ -220,35 +226,7 @@ export default async function Settings({
               All {org.member_limit} seats are in use. Contact your CRM administrator to add more users.
             </p>
           )}
-          <h3 className="mb-2 mt-8 font-bold text-navy-700 dark:text-white">
-            Pending invitations
-          </h3>
-          {invitations.data.map((i) => (
-            <div
-              key={i.id}
-              className="my-4 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-gray-100 p-4 dark:border-navy-700"
-            >
-              <p className="text-sm font-medium text-navy-700 dark:text-white">
-                {i.email}{' '}
-                <span className="block font-normal text-gray-500">
-                  expires{' '}
-                  {new Date(i.expires_at).toLocaleDateString('en-IN', {
-                    timeZone: 'Asia/Kolkata',
-                  })}
-                </span>
-              </p>
-              {canWrite && (
-                <ActionForm action={revokeInvitation.bind(null, orgSlug, i.id)}>
-                  <Submit>Revoke</Submit>
-                </ActionForm>
-              )}
-            </div>
-          ))}
-          {!invitations.data.length && (
-            <p className="mt-2 text-sm text-gray-500">
-              No pending invitations.
-            </p>
-          )}
+
         </div>
       </div>
       <div className={cardClass}>

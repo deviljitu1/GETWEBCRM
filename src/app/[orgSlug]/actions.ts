@@ -1,4 +1,5 @@
 'use server';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { requireWriteOrg } from 'utils/crm/access';
 import { rateLimit } from 'utils/crm/rate-limit';
@@ -275,28 +276,60 @@ export async function saveSettings(
     return 'Workspace profile saved';
   });
 }
-export async function inviteMember(
+export async function addMember(
   slug: string,
   _state: ActionState,
   form: FormData,
 ) {
   const context = await requireWriteOrg(slug, 'settings.manage');
   return save(context, async () => {
-    const result = await context.supabase
-      .from('organization_invitations')
+    const emailAddr = email(text(form, 'email', 254, true), true);
+    const password = text(form, 'password', 100, true);
+    const roleId = uuid(text(form, 'role_id', 36, true));
+
+    const adminAuthClient = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const authUser = await adminAuthClient.auth.admin.createUser({
+      email: emailAddr,
+      password: password,
+      email_confirm: true,
+    });
+
+    if (authUser.error) {
+      if (authUser.error.message.includes('already registered')) {
+        throw new Error('A user with this email already exists.');
+      }
+      throw new Error(`Failed to create user: ${authUser.error.message}`);
+    }
+
+    const userId = authUser.data.user.id;
+
+    // Use adminAuthClient to bypass RLS if needed, or context.supabase if user has permission
+    const memberResult = await adminAuthClient
+      .from('organization_members')
       .upsert(
         {
           organization_id: context.org.id,
-          email: email(text(form, 'email', 254, true), true),
-          role_id: uuid(text(form, 'role_id', 36, true)),
-          invited_by: context.user.id,
-          expires_at: new Date(Date.now() + 7 * 86400000).toISOString(),
-          accepted_at: null,
+          user_id: userId,
+          role_id: roleId,
+          status: 'active',
         },
-        { onConflict: 'organization_id,email' },
+        { onConflict: 'organization_id,user_id' }
       );
-    dbError(result.error);
-    return `Invitation saved for 7 days. Share /${slug}/login with this person. They must verify the invited email before access is granted.`;
+    dbError(memberResult.error);
+
+    // Create or update profile using admin client
+    await adminAuthClient
+      .from('profiles')
+      .upsert(
+        { id: userId, full_name: emailAddr.split('@')[0] },
+        { onConflict: 'id' }
+      );
+
+    return 'User created and granted access.';
   });
 }
 export async function manageMember(
@@ -318,20 +351,5 @@ export async function manageMember(
     });
     dbError(result.error);
     return 'Team access updated';
-  });
-}
-export async function revokeInvitation(
-  slug: string,
-  id: string,
-  _state: ActionState,
-) {
-  const context = await requireWriteOrg(slug, 'settings.manage');
-  return save(context, async () => {
-    const result = await context.supabase.rpc('revoke_invitation', {
-      org_id: context.org.id,
-      invitation_id: uuid(id),
-    });
-    dbError(result.error);
-    return 'Invitation revoked';
   });
 }
