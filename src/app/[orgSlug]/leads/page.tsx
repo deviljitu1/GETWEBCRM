@@ -45,7 +45,7 @@ export default async function LeadsPage({
   let query = supabase
     .from('leads')
     .select(
-      'id,full_name,phone_normalized,property_interest,assigned_to,next_followup_at,lead_stages(name),lead_sources(name)',
+      'id,full_name,phone_normalized,property_interest,assigned_to,next_followup_at,lead_stages!leads_stage_same_org(name),lead_sources!leads_source_same_org(name)',
       { count: 'exact' },
     )
     .eq('organization_id', org.id);
