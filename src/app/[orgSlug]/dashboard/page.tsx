@@ -1,3 +1,4 @@
+import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
 import Link from 'next/link';
 import { canReadLeads } from 'utils/crm/navigation-access';
 import {
@@ -18,29 +19,30 @@ export default async function Dashboard({
 }) {
   const { orgSlug } = await params;
   const { supabase, org, permissions, canWrite, user } = await requireOrg(orgSlug);
+  const showLeads = canReadLeads(permissions);
   const [summary, followups, visits, profile] = await Promise.all([
     supabase.rpc('workspace_summary', { org_id: org.id }),
-    supabase
+    showLeads ? supabase
       .from('leads')
       .select('id,full_name,next_followup_at')
       .eq('organization_id', org.id)
       .not('next_followup_at', 'is', null)
       .order('next_followup_at')
-      .limit(10),
-    supabase
+      .limit(10) : Promise.resolve({ data: [], error: null }),
+    showLeads ? supabase
       .from('site_visits')
       .select('id,lead_id,scheduled_at,status,leads(full_name)')
       .eq('organization_id', org.id)
       .eq('status', 'scheduled')
       .gte('scheduled_at', new Date().toISOString())
       .order('scheduled_at')
-      .limit(10),
+      .limit(10) : Promise.resolve({ data: [], error: null }),
     supabase.from('profiles').select('full_name').eq('id', user.id).single(),
   ]);
   [summary, followups, visits].forEach((r) => checkQuery(r.error));
   const userName = profile.data?.full_name || user.email?.split('@')[0] || 'User';
   const data = summary.data;
-  const showLeads = canReadLeads(permissions);
+
   const metrics = [
     ...(showLeads ? [{
       label: 'Accessible leads',
@@ -84,6 +86,7 @@ export default async function Dashboard({
   }).format(new Date());
   return (
     <div className="flex flex-col gap-6 pb-8">
+      <WorkspaceNavigation orgSlug={orgSlug} />
       <section className="overflow-hidden rounded-[24px] bg-gradient-to-br from-navy-700 via-navy-800 to-brand-700 p-6 text-white shadow-xl sm:p-8">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>

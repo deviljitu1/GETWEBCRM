@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Form from 'next/form';
 import {
   FiAlignJustify,
   FiSearch,
@@ -52,7 +53,7 @@ const Navbar = ({
       </div>
       <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
         {showLeadSearch && (
-          <form
+          <Form
             action={`/${scope}/leads`}
             className="group relative flex min-h-11 flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 text-navy-700 transition-all focus-within:border-brand-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-500/10 dark:border-navy-600 dark:bg-navy-900 dark:text-white sm:w-[290px] sm:flex-none"
           >
@@ -70,7 +71,7 @@ const Navbar = ({
             >
               <FiArrowRight className="h-4 w-4" />
             </button>
-          </form>
+          </Form>
         )}
         <button
           className="flex h-11 w-11 items-center justify-center rounded-full text-navy-700 transition-colors hover:bg-gray-100 dark:text-white dark:hover:bg-navy-700"

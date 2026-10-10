@@ -1,3 +1,5 @@
+import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
+import Form from 'next/form';
 import Link from 'next/link';
 import { requireOrg, checkQuery } from 'utils/crm/access';
 import { pageNumber } from 'utils/crm/validation';
@@ -29,7 +31,7 @@ export default async function Inventory({
     : '';
   let query = supabase
     .from('property_units')
-    .select('*', { count: 'exact' })
+    .select('id,unit_number,project_name,configuration,price,status', { count: 'exact' })
     .eq('organization_id', org.id);
   if (q) query = query.or(`project_name.ilike.%${q}%,unit_number.ilike.%${q}%`);
   if (status) query = query.eq('status', status);
@@ -46,6 +48,7 @@ export default async function Inventory({
     })}`;
   return (
     <div className="flex flex-col gap-5 pb-8">
+      <WorkspaceNavigation orgSlug={orgSlug} />
       <h1 className="text-2xl font-bold">Property inventory</h1>
       {!canWrite && <ReadOnlyNotice orgSlug={orgSlug} />}
       {canWrite && permissions.has('inventory.manage') && (
@@ -83,7 +86,7 @@ export default async function Inventory({
         </details>
       )}
       <div className={cardClass}>
-        <form className="mb-5 grid gap-3 md:grid-cols-3">
+        <Form key={`${q}:${status}`} action={`/${orgSlug}/inventory`} className="mb-5 grid gap-3 md:grid-cols-3">
           <Field
             label="Project or unit"
             name="q"
@@ -101,7 +104,7 @@ export default async function Inventory({
           <button className="self-end rounded-lg bg-brand-500 p-3 text-white">
             Apply filters
           </button>
-        </form>
+        </Form>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-sm">
             <thead>

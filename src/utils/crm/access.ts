@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { createClient } from 'utils/supabase/server';
 import { validSlug } from './validation';
 
-export const requireOrg = cache(async (slug: string, permission?: string) => {
+const resolveOrg = cache(async (slug: string) => {
   if (!validSlug(slug)) notFound();
   const supabase = await createClient();
   const {
@@ -38,18 +38,25 @@ export const requireOrg = cache(async (slug: string, permission?: string) => {
     : null;
   if (support?.error) throw new Error('Unable to verify support access');
   if (!membership.data && support?.data !== true) notFound();
-  const grants = membership.data
-    ? await supabase.from('role_permissions').select('permission_key').eq('role_id', membership.data.role_id)
-    : null;
+  const [grants, billing] = await Promise.all([
+    membership.data
+      ? supabase.from('role_permissions').select('permission_key').eq('role_id', membership.data.role_id)
+      : Promise.resolve(null),
+    supabase.rpc('billing_access', { org_id: org.id }),
+  ]);
   if (grants?.error) throw new Error('Unable to verify permissions');
   const permissions = new Set<string>(membership.data
     ? (grants?.data || []).map((row) => row.permission_key)
     : ['leads.read.all', 'inventory.read', 'sites.read']);
-  if (permission && !permissions.has(permission)) notFound();
-  const billing = await supabase.rpc('billing_access', { org_id: org.id });
   if (billing.error) throw new Error('Unable to verify subscription access');
   return { supabase, user, org, permissions, canWrite: Boolean(membership.data) && billing.data === true };
 });
+
+export async function requireOrg(slug: string, permission?: string) {
+  const context = await resolveOrg(slug);
+  if (permission && !context.permissions.has(permission)) notFound();
+  return context;
+}
 
 export async function requireWriteOrg(slug: string, permission?: string) {
   const context = await requireOrg(slug, permission);

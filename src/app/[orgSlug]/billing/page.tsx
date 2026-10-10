@@ -1,3 +1,4 @@
+import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
 import { requireOrg, checkQuery } from 'utils/crm/access';
 import { createAdminClient } from 'utils/supabase/admin';
 import { getMonthlyPlan } from 'utils/billing/catalog';
@@ -19,7 +20,7 @@ export default async function Billing({
   const { supabase, org, permissions } = await requireOrg(orgSlug);
   if (!permissions.has('settings.manage'))
     return (
-      <div className={cardClass}>
+      <div className={cardClass}><WorkspaceNavigation orgSlug={orgSlug} />
         <h1 className="text-2xl font-bold">Subscription & billing</h1>
         <p className="mt-4">
           Contact your workspace administrator to manage your subscription.
@@ -55,6 +56,7 @@ export default async function Billing({
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
+      <WorkspaceNavigation orgSlug={orgSlug} />
       <div>
         <h1 className="text-2xl font-bold text-navy-700 dark:text-white sm:text-3xl">
           Subscription & billing

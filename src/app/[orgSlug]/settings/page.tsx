@@ -1,3 +1,4 @@
+import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
 import { requireOrg, checkQuery } from 'utils/crm/access';
 import ActionForm, { Submit } from 'components/crm/ActionForm';
 import { Field, Select, cardClass } from 'components/crm/Fields';
@@ -51,6 +52,7 @@ export default async function Settings({
   const seatsAvailable = org.member_limit - activeMembers;
   return (
     <div className="flex flex-col gap-5 pb-8">
+      <WorkspaceNavigation orgSlug={orgSlug} />
       <h1 className="text-2xl font-bold">Workspace settings</h1>
       {!canWrite && <ReadOnlyNotice orgSlug={orgSlug} />}
       <div className="grid gap-5 md:grid-cols-2">

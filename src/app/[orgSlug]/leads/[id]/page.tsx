@@ -1,3 +1,4 @@
+import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireOrg, checkQuery } from 'utils/crm/access';
@@ -76,6 +77,7 @@ export default async function LeadDetail({
     new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
   return (
     <div className="flex flex-col gap-5 pb-8">
+      <WorkspaceNavigation orgSlug={orgSlug} />
       <Link href={`/${orgSlug}/leads`} className="text-brand-500">
         ← Back to leads
       </Link>

@@ -1,5 +1,8 @@
+import { loadSiteData, sitePageSize } from 'utils/crm/site-data';
+import { pageNumber } from 'utils/crm/validation';
+import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
 import Link from 'next/link';
-import { requireOrg, checkQuery } from 'utils/crm/access';
+import { requireOrg } from 'utils/crm/access';
 import { cardClass, Field, Select } from 'components/crm/Fields';
 import ActionForm, { Submit } from 'components/crm/ActionForm';
 import ReadOnlyNotice from 'components/crm/ReadOnlyNotice';
@@ -59,67 +62,29 @@ function MetricGroup({ title, items, currency = false }: { title: string; items:
 
 export default async function Sites({ params, searchParams }: {
   params: Promise<{ orgSlug: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ view?: string; page?: string; secondaryPage?: string; contractorPage?: string }>;
 }) {
   const { orgSlug } = await params;
-  const requested = (await searchParams).view;
+  const filters = await searchParams;
+  const requested = filters.view;
+  const page = pageNumber(filters.page), secondaryPage = pageNumber(filters.secondaryPage), contractorPage = pageNumber(filters.contractorPage);
   const view: View = views.some(([key]) => key === requested) ? requested as View : 'dashboard';
   const { supabase, org, canWrite: paidAccess, permissions } = await requireOrg(orgSlug,'sites.read');
   const canWrite = paidAccess && permissions.has('sites.manage');
-  const [categoryResult, projectResult, contractorResult, materialResult, bookingResult] = await Promise.all([
-    supabase.from('site_categories').select('id,kind,name').eq('organization_id',org.id).eq('is_active',true).order('name').limit(250),
-    supabase.from('site_projects').select('id,name,current_stage,status,site_location,site_incharge,site_supervisor,start_date,target_completion_date,total_units,completed_percent,pending_work,remarks').eq('organization_id',org.id).order('created_at',{ascending:false}).limit(100),
-    supabase.from('site_contractors').select('id,name,work_type,daily_rate,work_status').eq('organization_id',org.id).order('name').limit(100),
-    supabase.from('site_materials').select('id,name,unit,low_stock_level,category_id').eq('organization_id',org.id).order('name').limit(100),
-    supabase.from('site_bookings').select('id,customer_name,booking_value,booking_date,project_id').eq('organization_id',org.id).order('booking_date',{ascending:false}).limit(100),
-  ]);
-  [categoryResult,projectResult,contractorResult,materialResult,bookingResult].forEach(result => checkQuery(result.error));
-  const categories = categoryResult.data || [];
-  const projects = projectResult.data || [];
-  const contractors = contractorResult.data || [];
-  const materials = materialResult.data || [];
-  const bookings = bookingResult.data || [];
+  const { primary, secondary: extra, categories, projects, contractors, materials, bookings, summary } =
+    await loadSiteData(supabase, org.id, view, canWrite, page, secondaryPage);
+  const rows = primary.rows, secondary = extra.rows;
   const projectName = (id: string) => projects.find(project => project.id === id)?.name || 'Project';
   const contractorName = (id: string) => contractors.find(contractor => contractor.id === id)?.name || 'Contractor';
   const materialName = (id: string) => materials.find(material => material.id === id)?.name || 'Material';
   const categoryName = (id: string) => categories.find(category => category.id === id)?.name || 'Other';
-
-  let rows: Row[] = [];
-  let secondary: Row[] = [];
-  let summary: Row = {};
-  if (view === 'dashboard') {
-    const result = await supabase.rpc('site_management_summary',{org_id:org.id});
-    checkQuery(result.error);
-    summary = result.data || {};
-  } else if (view === 'projects') {
-    rows = projects;
-  } else if (view === 'daily') {
-    const result = await supabase.from('site_daily_reports').select('*').eq('organization_id',org.id).order('work_date',{ascending:false}).limit(50);
-    checkQuery(result.error); rows = result.data || [];
-  } else if (view === 'materials') {
-    const [stock,movements] = await Promise.all([
-      supabase.from('site_material_stock').select('*').eq('organization_id',org.id).order('name').limit(100),
-      supabase.from('site_material_movements').select('*').eq('organization_id',org.id).order('movement_date',{ascending:false}).limit(50),
-    ]);
-    checkQuery(stock.error); checkQuery(movements.error); rows = stock.data || []; secondary = movements.data || [];
-  } else if (view === 'labour') {
-    const [attendance,finances] = await Promise.all([
-      supabase.from('site_labour_entries').select('*').eq('organization_id',org.id).order('work_date',{ascending:false}).limit(50),
-      supabase.from('site_contractor_finances').select('*').eq('organization_id',org.id).order('entry_date',{ascending:false}).limit(50),
-    ]);
-    checkQuery(attendance.error); checkQuery(finances.error); rows = attendance.data || []; secondary = finances.data || [];
-  } else if (view === 'expenses') {
-    const result = await supabase.from('site_expenses').select('*').eq('organization_id',org.id).order('expense_date',{ascending:false}).limit(50);
-    checkQuery(result.error); rows = result.data || [];
-  } else if (view === 'tasks') {
-    const result = await supabase.from('site_tasks').select('*').eq('organization_id',org.id).order('created_at',{ascending:false}).limit(50);
-    checkQuery(result.error); rows = result.data || [];
-  } else if (view === 'sales') {
-    const result = await supabase.from('site_collections').select('*').eq('organization_id',org.id).order('payment_date',{ascending:false}).limit(50);
-    checkQuery(result.error); secondary = result.data || []; rows = bookings;
-  } else {
-    rows = categories;
-  }
+  const pageLink = (key: string, value: number) => '/'+orgSlug+'/sites?'+new URLSearchParams({ view, page: String(page), secondaryPage: String(secondaryPage), contractorPage: String(contractorPage), [key]: String(value) });
+  const pagination = (name: string, key: string, current: number, hasMore: boolean) => <nav aria-label={name + ' pagination'} className="flex items-center justify-between gap-4 text-sm">
+    <span>{name} · Page {current}</span><div className="flex gap-4">
+      {current > 1 && <Link className="font-semibold text-brand-500" href={pageLink(key,current-1)}>Previous</Link>}
+      {hasMore && <Link className="font-semibold text-brand-500" href={pageLink(key,current+1)}>Next</Link>}
+    </div>
+  </nav>;
   const paths = [...new Set([...rows,...secondary].flatMap(row => [row.receipt_path,...(row.photo_paths || [])].filter(Boolean)))];
   const signed = paths.length ? await supabase.storage.from('site-files').createSignedUrls(paths,3600) : { data: [], error: null };
   const urls = new Map((signed.data || []).filter(item => item.signedUrl).map(item => [item.path,item.signedUrl]));
@@ -127,6 +92,7 @@ export default async function Sites({ params, searchParams }: {
     ? <a href={urls.get(path)} target="_blank" rel="noreferrer" className="text-sm font-semibold text-brand-500">{name} ↗</a> : null;
 
   return <div className="flex min-w-0 flex-col gap-5 pb-8">
+      <WorkspaceNavigation orgSlug={orgSlug} />
     <header className="rounded-[24px] bg-gradient-to-br from-navy-700 to-brand-700 p-6 text-white sm:p-8">
       <p className="text-sm font-medium text-white/75">{org.name} · Site operations</p>
       <h1 className="mt-2 text-3xl font-bold">Projects, work and costs in one place</h1>
@@ -335,7 +301,7 @@ export default async function Sites({ params, searchParams }: {
         </Form>}
       </div>}
       <section className={cardClass}><h2 className="mb-4 text-lg font-bold">Contractors</h2>
-        {contractors.length ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{contractors.map(c=><div key={c.id} className="rounded-xl border border-gray-200 p-4 dark:border-navy-600"><b>{c.name}</b><p className="mt-1 text-sm text-gray-500">{c.work_type || 'General'} · {money(c.daily_rate)} / day</p></div>)}</div> : <Empty subject="contractors"/>}
+        {contractors.length ? <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{contractors.slice((contractorPage-1)*sitePageSize,contractorPage*sitePageSize).map(c=><div key={c.id} className="rounded-xl border border-gray-200 p-4 dark:border-navy-600"><b>{c.name}</b><p className="mt-1 text-sm text-gray-500">{c.work_type || 'General'} · {money(c.daily_rate)} / day</p></div>)}</div> : <Empty subject="contractors"/>}
       </section>
       <section className={cardClass}><h2 className="mb-4 text-lg font-bold">Attendance</h2>
         {rows.length ? <div className="space-y-2">{rows.map(entry=><p key={entry.id} className="rounded-xl border border-gray-200 p-3 text-sm dark:border-navy-600">{entry.work_date} · {projectName(entry.project_id)} · <b>{contractorName(entry.contractor_id)}</b> · {entry.labour_count} labour · {label(entry.attendance)} · {label(entry.work_status)}</p>)}</div> : <Empty subject="attendance records"/>}
@@ -344,5 +310,8 @@ export default async function Sites({ params, searchParams }: {
         {secondary.length ? <div className="space-y-2">{secondary.map(entry=><p key={entry.id} className="rounded-xl border border-gray-200 p-3 text-sm dark:border-navy-600">{entry.entry_date} · {contractorName(entry.contractor_id)} · {label(entry.kind)} · <b>{money(entry.amount)}</b> {attachment(entry.receipt_path,'Bill / receipt')}</p>)}</div> : <Empty subject="contractor amounts"/>}
       </section>
     </>}
+    {view !== 'dashboard' && pagination({projects:'Projects',daily:'Daily reports',materials:'Stock balance',labour:'Attendance',expenses:'Expenses',tasks:'Tasks',sales:'Bookings',categories:'Categories'}[view], 'page', page, primary.hasMore)}
+    {['materials','labour','sales'].includes(view) && pagination(view === 'materials' ? 'Material movements' : view === 'labour' ? 'Contractor bills & payments' : 'Collections', 'secondaryPage', secondaryPage, extra.hasMore)}
+    {view === 'labour' && pagination('Contractors', 'contractorPage', contractorPage, contractorPage * sitePageSize < contractors.length)}
   </div>;
 }

@@ -1,3 +1,5 @@
+import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
+import Form from 'next/form';
 import Link from 'next/link';
 import { requireOrg, checkQuery } from 'utils/crm/access';
 import { pageNumber } from 'utils/crm/validation';
@@ -23,7 +25,7 @@ export default async function LeadsPage({
     !permissions.has('leads.read.all') &&
     !permissions.has('leads.read.assigned')
   ) {
-    return <p className="p-8">Your role does not include lead access.</p>;
+    return <><WorkspaceNavigation orgSlug={orgSlug} /><p className="p-8">Your role does not include lead access.</p></>;
   }
   const filters = await searchParams;
   const q =
@@ -73,6 +75,7 @@ export default async function LeadsPage({
   }
   return (
     <div className="flex flex-col gap-5 pb-8">
+      <WorkspaceNavigation orgSlug={orgSlug} />
       <h1 className="text-2xl font-bold">Leads</h1>
       {!canWrite && <ReadOnlyNotice orgSlug={orgSlug} />}
       {canWrite && permissions.has('leads.create') && (
@@ -122,7 +125,7 @@ export default async function LeadsPage({
         </div>
       )}
       <div className={cardClass}>
-        <form className="mb-5 grid gap-3 md:grid-cols-4">
+        <Form key={`${q}:${stage}:${owner}`} action={`/${orgSlug}/leads`} className="mb-5 grid gap-3 md:grid-cols-4">
           <Field
             label="Search"
             name="q"
@@ -146,7 +149,7 @@ export default async function LeadsPage({
           <button className="self-end rounded-lg bg-brand-500 p-3 text-white">
             Apply filters
           </button>
-        </form>
+        </Form>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-sm">
             <thead>
