@@ -1,6 +1,7 @@
 import { loadSiteData, sitePageSize } from 'utils/crm/site-data';
 import { pageNumber } from 'utils/crm/validation';
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
+import FormDialog from 'components/crm/FormDialog';
 import Link from 'next/link';
 import { requireOrg } from 'utils/crm/access';
 import { cardClass, Field, Select } from 'components/crm/Fields';
@@ -30,13 +31,12 @@ function Form({ title, action, children, submit = 'Save record' }: {
   title: string; action: (state: { error?: string; message?: string }, form: FormData) => Promise<{ error?: string; message?: string }>;
   children: React.ReactNode; submit?: string;
 }) {
-  return <details className={cardClass}>
-    <summary className="cursor-pointer text-lg font-bold">{title}</summary>
+  return <FormDialog title={title} description="Enter the details below. Fields marked * are required.">
     <ActionForm action={action} reset className="mt-5">
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
       <div><Submit>{submit}</Submit></div>
     </ActionForm>
-  </details>;
+  </FormDialog>;
 }
 
 function ProjectSelect({ projects, optional = false }: { projects: Row[]; optional?: boolean }) {

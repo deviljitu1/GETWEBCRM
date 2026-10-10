@@ -1,4 +1,5 @@
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
+import FormDialog from 'components/crm/FormDialog';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireOrg, checkQuery } from 'utils/crm/access';
@@ -190,7 +191,7 @@ export default async function LeadDetail({
               )}
             </div>
             {editable && (
-              <ActionForm action={addNote.bind(null, orgSlug, id)} reset>
+              <FormDialog title="Add note"><ActionForm action={addNote.bind(null, orgSlug, id)} reset>
                 <label className="text-sm">
                   New note
                   <textarea
@@ -201,7 +202,7 @@ export default async function LeadDetail({
                   />
                 </label>
                 <Submit>Add note</Submit>
-              </ActionForm>
+              </ActionForm></FormDialog>
             )}
           </div>
           <div className={cardClass}>
@@ -236,7 +237,7 @@ export default async function LeadDetail({
               <p className="mb-4 text-gray-500">No visits scheduled.</p>
             )}
             {editable && (
-              <ActionForm action={scheduleVisit.bind(null, orgSlug, id)} reset>
+              <FormDialog title="Schedule site visit"><ActionForm action={scheduleVisit.bind(null, orgSlug, id)} reset>
                 <DateTimeField
                   label="Visit time"
                   name="scheduled_at"
@@ -244,7 +245,7 @@ export default async function LeadDetail({
                 />
                 <Field label="Notes" name="notes" maxLength={4000} />
                 <Submit>Schedule site visit</Submit>
-              </ActionForm>
+              </ActionForm></FormDialog>
             )}
           </div>
         </div>

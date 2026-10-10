@@ -1,4 +1,5 @@
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
+import FormDialog from 'components/crm/FormDialog';
 import Form from 'next/form';
 import Link from 'next/link';
 import { requireOrg, checkQuery } from 'utils/crm/access';
@@ -80,14 +81,13 @@ export default async function LeadsPage({
       {!canWrite && <ReadOnlyNotice orgSlug={orgSlug} />}
       {canWrite && permissions.has('leads.create') && (
         <div className="grid gap-5 md:grid-cols-2">
-          <details className={cardClass}>
-            <summary className="cursor-pointer font-bold">Add lead</summary>
+          <FormDialog title="Add lead" description="Capture contact details and property interest. Fields marked * are required.">
             <ActionForm
               action={addLead.bind(null, orgSlug)}
               reset
               className="mt-4"
             >
-              <Field
+              <div className="grid gap-4 sm:grid-cols-2"><Field
                 label="Full name"
                 name="full_name"
                 required
@@ -101,11 +101,10 @@ export default async function LeadsPage({
                 maxLength={160}
               />
               <Field label="City" name="city" maxLength={100} />
-              <Submit>Add lead</Submit>
+              </div><Submit>Save lead</Submit>
             </ActionForm>
-          </details>
-          <details className={cardClass}>
-            <summary className="cursor-pointer font-bold">Import CSV</summary>
+          </FormDialog>
+          <FormDialog title="Import CSV" description="Upload multiple leads in one step.">
             <p className="my-4 text-sm text-gray-500">
               Headers: full_name, phone, email, property_interest, city. Only
               full_name is required. Maximum 500 leads / 1 MB. Duplicate records
@@ -121,7 +120,7 @@ export default async function LeadsPage({
               />
               <Submit>Import CSV</Submit>
             </ActionForm>
-          </details>
+          </FormDialog>
         </div>
       )}
       <div className={cardClass}>

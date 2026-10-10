@@ -1,4 +1,5 @@
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
+import FormDialog from 'components/crm/FormDialog';
 import { requireOrg, checkQuery } from 'utils/crm/access';
 import ActionForm, { Submit } from 'components/crm/ActionForm';
 import { Field, Select, cardClass } from 'components/crm/Fields';
@@ -188,8 +189,8 @@ export default async function Settings({
             {activeMembers} of {org.member_limit} seats used. Create a user with a temporary password. They must change it at first login.
           </p>
           {canWrite && seatsAvailable > 0 && (
-            <ActionForm action={addMember.bind(null, orgSlug)} reset>
-              <div className="flex flex-col gap-4">
+            <FormDialog title="Add user" description="Create a team account with a temporary password and the appropriate role."><ActionForm action={addMember.bind(null, orgSlug)} reset>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <Field
                   label="Email (User ID)"
                   name="email"
@@ -222,7 +223,7 @@ export default async function Settings({
               <div className="mt-6">
                 <Submit>Create user</Submit>
               </div>
-            </ActionForm>
+            </ActionForm></FormDialog>
           )}
           {canWrite && seatsAvailable <= 0 && (
             <p className="rounded-xl bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-500/10 dark:text-amber-100">

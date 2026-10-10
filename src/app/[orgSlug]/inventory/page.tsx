@@ -1,4 +1,5 @@
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
+import FormDialog from 'components/crm/FormDialog';
 import Form from 'next/form';
 import Link from 'next/link';
 import { requireOrg, checkQuery } from 'utils/crm/access';
@@ -7,7 +8,7 @@ import ActionForm, { Submit } from 'components/crm/ActionForm';
 import { Field, Select, cardClass } from 'components/crm/Fields';
 import { addProperty, updateProperty } from '../actions';
 import ReadOnlyNotice from 'components/crm/ReadOnlyNotice';
-import { MdApartment, MdCheckCircleOutline, MdSchedule, MdLocalOffer, MdFilterList, MdSearch, MdAdd } from 'react-icons/md';
+import { MdApartment, MdCheckCircleOutline, MdSchedule, MdLocalOffer, MdFilterList, MdSearch } from 'react-icons/md';
 export default async function Inventory({
   params,
   searchParams,
@@ -68,26 +69,30 @@ export default async function Inventory({
       </section>
       {!canWrite && <ReadOnlyNotice orgSlug={orgSlug} />}
       {canWrite && permissions.has('inventory.manage') && (
-        <details className={cardClass}>
-          <summary className="cursor-pointer font-semibold text-brand-500"><MdAdd aria-hidden="true" className="mr-1 inline text-xl"/>Add property</summary>
+        <FormDialog title="Add property" description="Add a unit to your workspace inventory. New properties start as available.">
           <ActionForm
             action={addProperty.bind(null, orgSlug)}
             reset
             className="mt-4"
           >
+            <fieldset className="min-w-0 rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5 dark:border-navy-600 dark:bg-navy-900">
+            <legend className="px-2 text-sm font-semibold text-navy-700 dark:text-white">Property details</legend>
+            <div className="grid gap-5 sm:grid-cols-2">
             <Field
               label="Project name"
               name="project_name"
               required
               maxLength={160}
+              placeholder="e.g. Green Meadows"
             />
             <Field
               label="Unit number"
               name="unit_number"
               required
               maxLength={80}
+              placeholder="e.g. A-101"
             />
-            <Field label="Configuration" name="configuration" maxLength={80} />
+            <Field label="Configuration (optional)" name="configuration" maxLength={80} placeholder="e.g. 2 BHK, 1,200 sq ft" />
             <Field
               label={`Listed price (${org.currency_code})`}
               name="price"
@@ -96,13 +101,18 @@ export default async function Inventory({
               min="0"
               max="999999999999.99"
               step="0.01"
+              placeholder="e.g. 4500000"
             />
-            <Submit>Add property</Submit>
+            </div>
+            </fieldset>
+            <div className="flex flex-col gap-3 border-t border-gray-200 pt-4 sm:flex-row sm:items-center sm:justify-between dark:border-navy-600"><p className="text-xs text-gray-700 dark:text-gray-300">Fields marked * are required. Prices use {org.currency_code}.</p><Submit>Save property</Submit></div>
           </ActionForm>
-        </details>
+        </FormDialog>
       )}
       <div className={cardClass}>
-        <Form key={`${q}:${status}`} action={`/${orgSlug}/inventory`} className="mb-5 grid gap-4 md:grid-cols-[1.5fr_1fr_0.75fr]">
+        <details key={`${q}:${status}`} className="mb-5">
+          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-gray-200 bg-brand-50 px-5 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden"><MdFilterList aria-hidden="true" className="text-xl"/>Apply filters{(q || status) && <span className="rounded-full bg-brand-500 px-2 py-0.5 text-xs text-white">{Number(Boolean(q)) + Number(Boolean(status))}</span>}</summary>
+        <Form action={`/${orgSlug}/inventory`} className="mt-4 grid gap-4 rounded-xl border border-gray-200 p-4 dark:border-navy-600 md:grid-cols-[1.5fr_1fr_0.75fr]">
           <div className="relative"><Field
             label="Project or unit"
             name="q"
@@ -122,6 +132,8 @@ export default async function Inventory({
             <MdFilterList aria-hidden="true" className="text-xl"/>Apply filters
           </button>
         </Form>
+        </details>
+        {(q || status) && <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-gray-700 dark:text-gray-200">{q && <span>Search: {q}</span>}{status && <span className="capitalize">Status: {status}</span>}<Link href={`/${orgSlug}/inventory`} className="font-semibold text-brand-500 underline underline-offset-4">Clear filters</Link></div>}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-sm">
             <thead>
