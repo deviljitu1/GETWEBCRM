@@ -55,7 +55,7 @@ const Navbar = ({
         {showLeadSearch && (
           <Form
             action={`/${scope}/leads`}
-            className="group relative flex min-h-11 flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 text-navy-700 transition-all focus-within:border-brand-400 focus-within:bg-white focus-within:ring-4 focus-within:ring-brand-500/10 dark:border-navy-600 dark:bg-navy-900 dark:text-white sm:w-[290px] sm:flex-none"
+            className="group relative flex min-h-11 flex-1 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 text-navy-700 transition-all focus-within:border-brand-400 focus-within:ring-4 focus-within:ring-brand-500/10 dark:border-navy-600 dark:bg-navy-900 dark:text-white sm:w-[290px] sm:flex-none"
           >
             <FiSearch className="mr-2 h-4 w-4 shrink-0 text-brand-500" />
             <input
@@ -63,7 +63,7 @@ const Navbar = ({
               aria-label="Search leads"
               maxLength={100}
               placeholder="Search leads, phone, or property…"
-              className="!bg-transparent min-w-0 flex-1 text-sm outline-none placeholder:text-gray-400"
+              className="bg-transparent! min-w-0 flex-1 text-sm outline-none placeholder:text-gray-400"
             />
             <button
               aria-label="Search leads"
