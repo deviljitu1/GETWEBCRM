@@ -41,14 +41,14 @@ export default async function Dashboard() {
       value: data.members,
       detail: 'Across all workspaces',
       icon: MdGroup,
-      accent: 'bg-sky-500',
+      accent: 'bg-cyan-500',
     },
     {
       label: 'Paid subscriptions',
       value: activeSubscriptions,
       detail: 'Verified monthly subscribers',
       icon: MdPayment,
-      accent: 'bg-emerald-500',
+      accent: 'bg-green-500',
     },
     {
       label: 'Platform health',

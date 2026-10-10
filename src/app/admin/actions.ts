@@ -64,7 +64,7 @@ export async function createOrganization(_state: ActionState, form: FormData) {
 export async function resetTenantOwnerPassword(id: string, _state: ActionState, form: FormData) {
   const {supabase,user} = await requirePlatformAdmin();
   return save(user.id,async()=>{
-    const orgId = uuid(id), address = email(text(form,'owner_email',254,true),true);
+    const orgId = uuid(id);
     const password = text(form,'password',100,true);
     if (password.length < 12) throw new Error('Use a temporary password with at least 12 characters.');
     const owner = await supabase.from('organization_members').select('user_id,roles!inner(key)')
@@ -75,7 +75,7 @@ export async function resetTenantOwnerPassword(id: string, _state: ActionState, 
     const platform = await admin.from('platform_admins').select('user_id').eq('user_id',owner.data.user_id).maybeSingle();
     if (platform.error || platform.data) throw new Error('Platform administrator passwords cannot be reset here.');
     const account = await admin.auth.admin.getUserById(owner.data.user_id);
-    if (account.error || account.data.user?.email?.toLowerCase() !== address) throw new Error('The email does not match this workspace owner.');
+    if (account.error || !account.data.user || account.data.user.id !== owner.data.user_id) throw new Error('Unable to verify this workspace owner account.');
     const updated = await admin.auth.admin.updateUserById(owner.data.user_id, { password,
       app_metadata: { ...account.data.user.app_metadata, must_change_password: true } });
     if (updated.error) throw new Error('Unable to reset the password. Please try again.');

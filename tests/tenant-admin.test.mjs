@@ -47,14 +47,14 @@ test('existing owner creation does not change credentials and invalid inputs nev
     const instance=await actions();assert.ok((await instance.api.createOrganization({},form(fields))).error);assert.equal(instance.calls.length,0);
   }
 });
-test('password reset blocks own/platform accounts and wrong-owner emails',async()=>{
-  for(const options of [{owner:'admin'},{platform:true},{accountEmail:'different@example.com'}]) {
+test('password reset blocks own and platform accounts',async()=>{
+  for(const options of [{owner:'admin'},{platform:true}]) {
     const {api,calls}=await actions(options);assert.ok((await api.resetTenantOwnerPassword(orgId,{},form())).error);
     assert.ok(!calls.some(call=>call[0]==='updateUser'));
   }
 });
 test('owner password reset targets verified owner and preserves metadata',async()=>{
-  const {api,calls}=await actions();assert.ok((await api.resetTenantOwnerPassword(orgId,{},form())).message);
+  const {api,calls}=await actions();const resetForm=form();resetForm.delete('owner_email');assert.ok((await api.resetTenantOwnerPassword(orgId,{},resetForm)).message);
   const update=calls.find(call=>call[0]==='updateUser');assert.equal(update[1],'owner');
   assert.deepEqual(update[2].app_metadata,{existing:true,must_change_password:true});
 });
