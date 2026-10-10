@@ -5,13 +5,13 @@ import { SourceTextModule, SyntheticModule } from 'node:vm';
 import ts from 'typescript';
 import * as validation from '../src/utils/crm/validation.ts';
 
-async function access({user = {id:'member'},org = {id:'org',status:'active'},membership = {role_id:'role'},permissions = ['leads.create'],admin = false,paidAccess = true,queryError = null, rpcError = null, calls = []} = {}) {
+async function access({user = {id:'member'},org = {id:'org',status:'active'},membership = {role_id:'role'},permissions = ['leads.create'],admin = false,supportManagement = false,paidAccess = true,queryError = null, rpcError = null, calls = []} = {}) {
   const client = {
     auth:{getUser:async()=>{calls.push('auth');return {data:{user},error:null};}},
-    rpc:async name=>{calls.push(name);return {data:name==='billing_access'?paidAccess:admin,error:rpcError};},
+    rpc:async name=>{calls.push(name);return {data:name==='billing_access'?paidAccess:name==='has_support_management'?supportManagement:admin,error:name==='has_support_management'?null:rpcError};},
     from(table) {
       calls.push(table);
-      const result={data:table==='organizations'?org:table==='organization_members'?membership:permissions.map(permission_key=>({permission_key})),error:queryError};
+      const result={data:table==='organizations'?org:table==='organization_members'?membership:permissions.map(permission_key=>({permission_key,key:permission_key})),error:queryError};
       const query={select:()=>query,eq:()=>query,maybeSingle:async()=>result,then:(resolve)=>Promise.resolve(result).then(resolve)};
       return query;
     },
@@ -43,6 +43,17 @@ test('support access is read-only and excludes workspace administration',async()
   assert.equal(context.canWrite,false);
   await assert.rejects(dal.requireOrg('tenant-a','settings.manage'),/NOT_FOUND/);
   await assert.rejects(dal.requireWriteOrg('tenant-a','sites.read'),/read-only/);
+});
+
+test('verified management support receives database grants and can write only with verified billing access',async()=>{
+  const dal=await access({membership:null,admin:true,supportManagement:true,permissions:['settings.manage','sites.manage']});
+  const context=await dal.requireWriteOrg('tenant-a','settings.manage');
+  assert.equal(context.canWrite,true);
+  await assert.rejects(dal.requireOrg('tenant-a','unknown.permission'),/NOT_FOUND/);
+  const failed=await access({membership:null,admin:true,supportManagement:true,paidAccess:false});
+  await assert.rejects(failed.requireWriteOrg('tenant-a','leads.create'),/read-only/);
+  const expired=await access({membership:null,admin:false,supportManagement:true});
+  await assert.rejects(expired.requireOrg('tenant-a'),/NOT_FOUND/);
 });
 test('tenant access rejects unavailable, suspended and nonmember workspaces',async()=>{
   for(const setup of [{org:null},{org:{id:'org',status:'suspended'}},{membership:null}]) {

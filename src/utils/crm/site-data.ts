@@ -30,6 +30,10 @@ export async function loadSiteData(supabase: SupabaseClient, orgId: string, view
   };
   const main = () => {
     switch (view) {
+      case 'missing': return paged('site_missing_daily_reports', 'id,name,site_supervisor,site_incharge,report_date', 'name', page);
+      case 'balances': return paged('site_contractor_balances', 'id,name,work_type,billed,advance,paid,outstanding,credit,today_labour', 'name', page);
+      case 'costs': return paged('site_expense_totals', 'id,name,total,today_total', 'name', page);
+      case 'consumption': return paged('site_material_totals', 'id,name,unit,received,used,balance,low_stock_level', 'name', page);
       case 'projects': return paged('site_projects', 'id,name,current_stage,status,site_location,site_incharge,site_supervisor,start_date,target_completion_date,total_units,completed_percent,pending_work,remarks', 'created_at', page);
       case 'daily': return paged('site_daily_reports', 'id,project_id,work_date,work_description,location_floor,labour_count,supervisor,work_completed,pending_work,material_used,photo_paths', 'work_date', page);
       case 'materials': return paged('site_material_stock', 'id,name,unit,balance,low_stock_level', 'name', page);

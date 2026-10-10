@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { loadSiteData } from '../src/utils/crm/site-data.ts';
 
 function client(records = {}, fail = '') {
@@ -38,4 +39,31 @@ test('required dropdowns continue beyond a single lookup batch',async()=>{
 });
 test('query failures are not treated as empty lists',async()=>{
   await assert.rejects(loadSiteData(client({},'site_tasks'),'org-a','tasks',false,1,1),/Unable to load records/);
+});
+
+test('new reports are paginated, org-scoped and do not fetch unused lookups',async()=>{
+  for (const [view,table] of [['missing','site_missing_daily_reports'],['balances','site_contractor_balances'],['costs','site_expense_totals'],['consumption','site_material_totals']]) {
+    const db=client({[table]:[...Array.from({length:51},(_,id)=>({id,organization_id:'org-a'})),{id:'private',organization_id:'org-b'}]});
+    const data=await loadSiteData(db,'org-a',view,false,1,1);
+    assert.equal(db.calls.length,1);
+    assert.equal(db.calls[0].table,table);
+    assert.equal(db.calls[0].filters.organization_id,'org-a');
+    assert.equal(data.primary.rows.length,50);
+    assert.equal(data.primary.hasMore,true);
+    const next=await loadSiteData(db,'org-a',view,false,2,1);
+    assert.deepEqual(next.primary.rows.map(row=>row.id),[50]);
+    assert.equal(next.primary.hasMore,false);
+    await assert.rejects(loadSiteData(client({},table),'org-a',view,false,1,1),/Unable to load records/);
+  }
+});
+
+test('report views preserve invoker RLS, explicit permission guards and org joins',()=>{
+  const sql=readFileSync(new URL('../supabase/migrations/00013_site_reporting.sql',import.meta.url),'utf8');
+  assert.equal((sql.match(/WITH \(security_invoker=true\)/g)||[]).length,4);
+  assert.equal((sql.match(/has_org_permission\([^\n]+,'sites.read'\)/g)||[]).length,4);
+  assert.match(sql,/d.organization_id=p.organization_id AND d.project_id=p.id/);
+  assert.match(sql,/organization_id=c.organization_id AND contractor_id=c.id/g);
+  assert.match(sql,/organization_id=p.organization_id AND project_id=p.id/);
+  assert.match(sql,/organization_id=m.organization_id AND material_id=m.id/);
+  assert.match(sql,/Asia\/Kolkata/);
 });

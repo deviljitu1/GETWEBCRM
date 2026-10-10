@@ -38,20 +38,27 @@ const resolveOrg = cache(async (slug: string) => {
     : null;
   if (support?.error) throw new Error('Unable to verify support access');
   if (!membership.data && support?.data !== true) notFound();
-  const [grants, billing] = await Promise.all([
+  const [grants, billing, management] = await Promise.all([
     membership.data
       ? supabase.from('role_permissions').select('permission_key').eq('role_id', membership.data.role_id)
       : Promise.resolve(null),
     Promise.resolve(supabase.rpc('billing_access', { org_id: org.id }))
       .catch(() => ({ data: false, error: { code: 'unavailable' } })),
+    supabase.rpc('has_support_management', { target_org_id: org.id }),
   ]);
   if (grants?.error) throw new Error('Unable to verify permissions');
-  const permissions = new Set<string>(membership.data
+  if (management.error) throw new Error('Unable to verify support access');
+  const supportPermissions = management.data === true
+    ? await supabase.from('permissions').select('key') : null;
+  if (supportPermissions?.error) throw new Error('Unable to verify permissions');
+  const permissions = new Set<string>(management.data === true
+    ? (supportPermissions?.data || []).map((row) => row.key)
+    : membership.data
     ? (grants?.data || []).map((row) => row.permission_key)
     : ['leads.read.all', 'inventory.read', 'sites.read']);
   if (billing.error) console.error('Workspace billing lookup failed', { code: billing.error.code });
-  return { supabase, user, org, permissions, billingVerified: !billing.error,
-    canWrite: Boolean(membership.data) && !billing.error && billing.data === true };
+  return { supabase, user, org, permissions, supportManagement: management.data === true, billingVerified: !billing.error,
+    canWrite: (Boolean(membership.data) || management?.data === true) && !billing.error && billing.data === true };
 });
 
 export async function requireOrg(slug: string, permission?: string) {

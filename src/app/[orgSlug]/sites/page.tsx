@@ -16,6 +16,8 @@ const views = [
   ['dashboard','Overview'], ['projects','Projects'], ['daily','Daily reports'],
   ['materials','Materials'], ['labour','Labour & contractors'], ['expenses','Expenses'],
   ['tasks','Tasks'], ['sales','Bookings & collections'], ['categories','Categories'],
+  ['missing','Missing daily updates'], ['balances','Contractor balances'],
+  ['costs','Site-wise expenses'], ['consumption','Material usage'],
 ] as const;
 type View = (typeof views)[number][0];
 type Row = Record<string, any>;
@@ -106,12 +108,61 @@ export default async function Sites({ params, searchParams }: {
     {view === 'dashboard' && <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
       <MetricGroup title="Projects" items={[["Total projects",summary.projects],["Active sites",summary.active_sites],["Completed sites",summary.completed_sites],["Delayed sites",summary.delayed_sites]]} />
       <MetricGroup title="Site work" items={[["Today's reports",summary.today_reports],["Completed tasks",summary.completed_tasks],["Pending tasks",summary.pending_tasks],["Delayed tasks",summary.delayed_tasks]]} />
-      <MetricGroup title="Materials" items={[["Materials in stock",summary.stock_available],["Low-stock items",summary.low_stock],["Quantity received",summary.material_purchased],["Quantity used",summary.material_used]]} />
+      <MetricGroup title="Materials" items={[["Materials in stock",summary.stock_available],["Low-stock items",summary.low_stock]]} />
       <MetricGroup title="Labour" items={[["Today's labour",summary.today_labour],["Contractors present",summary.contractor_attendance]]} />
-      <MetricGroup title="Site finance" currency items={[["Today's expenses",summary.today_expenses],["Total site expenses",summary.site_expenses],["Contractor payments",summary.contractor_payments],["Pending contractor bills",summary.contractor_pending],["Material purchases",summary.material_payments]]} />
+      <MetricGroup title="Site finance" currency items={[["Today's expenses",summary.today_expenses],["Total site expenses",summary.site_expenses],["Contractor payments",summary.contractor_payments],["Material purchase value",summary.material_payments]]} />
       <MetricGroup title="Sales" items={[["Leads",summary.leads],["Follow-ups today",summary.followups],["Site visits",summary.visits],["Bookings",summary.bookings]]} />
       <MetricGroup title="Collections" currency items={[["Collected",summary.collection],["Outstanding",summary.outstanding]]} />
     </div>}
+
+    {view === 'dashboard' && <section className={cardClass}>
+      <h2 className="text-lg font-bold">Daily checks and detailed reports</h2>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {views.filter(([key]) => ['missing','balances','costs','consumption'].includes(key)).map(([key,name]) =>
+          <Link key={key} href={`/${orgSlug}/sites?view=${key}`} className="rounded-xl bg-gray-50 p-4 font-semibold text-brand-500 dark:bg-navy-900">{name} →</Link>)}
+      </div>
+      <p className="mt-3 text-sm text-gray-500">Open Material usage for quantities by material and unit. Contractor balances show outstanding dues and advances separately.</p>
+    </section>}
+
+    {view === 'missing' && <section className={cardClass}>
+      <h2 className="text-lg font-bold">Sites awaiting today&apos;s daily report</h2>
+      <p className="mt-2 text-sm text-gray-500">India time · Active and delayed sites that have started. This list updates when a daily report is submitted; it does not send messages.</p>
+      <div className="mt-4 space-y-3">{rows.length ? rows.map(site => <article key={site.id} className="rounded-xl border border-amber-200 p-4 dark:border-navy-600">
+        <h3 className="font-semibold">{site.name}</h3>
+        <p className="mt-1 text-sm text-gray-500">{site.report_date} · Supervisor: {site.site_supervisor || 'Unassigned'} · In-charge: {site.site_incharge || 'Unassigned'}</p>
+        {canWrite && <Link href={`/${orgSlug}/sites?view=daily`} className="mt-2 inline-block text-sm font-semibold text-brand-500">Submit daily report →</Link>}
+      </article>) : <p className="text-sm text-gray-500">No missing updates on this page. All eligible sites have reported, or there are no eligible sites.</p>}</div>
+    </section>}
+
+    {view === 'balances' && <section className={cardClass}>
+      <h2 className="text-lg font-bold">Contractor balances and today&apos;s labour</h2>
+      <p className="mt-2 text-sm text-gray-500">Outstanding = bills minus advances and payments. Credit shows payments ahead of recorded bills. Labour is reported by contractor/group.</p>
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">{rows.length ? rows.map(contractor => <article key={contractor.id} className="rounded-xl border border-gray-200 p-4 dark:border-navy-600">
+        <h3 className="font-semibold">{contractor.name}</h3>
+        <p className="mt-1 text-sm text-gray-500">{contractor.work_type || 'General'} · Today&apos;s labour: {contractor.today_labour}</p>
+        <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">{[['Bills',contractor.billed],['Advances',contractor.advance],['Payments',contractor.paid],['Outstanding',contractor.outstanding],['Credit',contractor.credit]].map(([name,value]) =>
+          <div key={String(name)}><dt className="text-gray-500">{name}</dt><dd className="font-semibold">{money(value)}</dd></div>)}</dl>
+      </article>) : <Empty subject="contractors"/>}</div>
+    </section>}
+
+    {view === 'costs' && <section className={cardClass}>
+      <h2 className="text-lg font-bold">Site-wise expenses</h2>
+      <p className="mt-2 text-sm text-gray-500">Recorded site expenses only. Material purchases and contractor payments remain separate to avoid double counting.</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">{rows.length ? rows.map(site => <article key={site.id} className="rounded-xl border border-gray-200 p-4 dark:border-navy-600">
+        <h3 className="font-semibold">{site.name}</h3><p className="mt-2 text-sm">Today: <b>{money(site.today_total)}</b></p><p className="mt-1 text-sm">All time: <b>{money(site.total)}</b></p>
+      </article>) : <Empty subject="sites"/>}</div>
+    </section>}
+
+    {view === 'consumption' && <section className={cardClass}>
+      <h2 className="text-lg font-bold">Material receipts, consumption and balance</h2>
+      <p className="mt-2 text-sm text-gray-500">All-time totals per material. Different units are never added together. These balances cover workspace stock.</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{rows.length ? rows.map(material => <article key={material.id} className="rounded-xl border border-gray-200 p-4 dark:border-navy-600">
+        <h3 className="font-semibold">{material.name}</h3>
+        <dl className="mt-3 space-y-2 text-sm">{[['Received',material.received],['Used',material.used],['Balance',material.balance]].map(([name,value]) =>
+          <div key={String(name)} className="flex justify-between gap-3"><dt>{name}</dt><dd className="font-semibold">{Number(value).toLocaleString('en-IN')} {material.unit}</dd></div>)}</dl>
+        {Number(material.balance)<=Number(material.low_stock_level) && <p className="mt-3 text-sm font-semibold text-amber-600">Low stock · threshold {material.low_stock_level} {material.unit}</p>}
+      </article>) : <Empty subject="materials"/>}</div>
+    </section>}
 
     {view === 'projects' && <>
       {canWrite && <Form title="Add project / site" action={addProject.bind(null,orgSlug)} submit="Create project">
@@ -310,7 +361,7 @@ export default async function Sites({ params, searchParams }: {
         {secondary.length ? <div className="space-y-2">{secondary.map(entry=><p key={entry.id} className="rounded-xl border border-gray-200 p-3 text-sm dark:border-navy-600">{entry.entry_date} · {contractorName(entry.contractor_id)} · {label(entry.kind)} · <b>{money(entry.amount)}</b> {attachment(entry.receipt_path,'Bill / receipt')}</p>)}</div> : <Empty subject="contractor amounts"/>}
       </section>
     </>}
-    {view !== 'dashboard' && pagination({projects:'Projects',daily:'Daily reports',materials:'Stock balance',labour:'Attendance',expenses:'Expenses',tasks:'Tasks',sales:'Bookings',categories:'Categories'}[view], 'page', page, primary.hasMore)}
+    {view !== 'dashboard' && pagination({projects:'Projects',daily:'Daily reports',materials:'Stock balance',labour:'Attendance',expenses:'Expenses',tasks:'Tasks',sales:'Bookings',categories:'Categories',missing:'Missing updates',balances:'Contractor balances',costs:'Site expenses',consumption:'Material usage'}[view], 'page', page, primary.hasMore)}
     {['materials','labour','sales'].includes(view) && pagination(view === 'materials' ? 'Material movements' : view === 'labour' ? 'Contractor bills & payments' : 'Collections', 'secondaryPage', secondaryPage, extra.hasMore)}
     {view === 'labour' && pagination('Contractors', 'contractorPage', contractorPage, contractorPage * sitePageSize < contractors.length)}
   </div>;
