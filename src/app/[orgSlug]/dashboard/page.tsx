@@ -1,4 +1,5 @@
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
+import EmptyState from 'components/crm/EmptyState';
 import Link from 'next/link';
 import { canReadLeads } from 'utils/crm/navigation-access';
 import {
@@ -191,9 +192,7 @@ export default async function Dashboard({
               </Link>
             ))}
             {!visits.data?.length && (
-              <p className="rounded-xl bg-gray-50 p-5 text-sm text-gray-500 dark:bg-navy-900">
-                {visits.unavailable ? 'Visit information is temporarily unavailable.' : 'No upcoming visits. New visits will appear here.'}
-              </p>
+              <EmptyState title={visits.unavailable ? 'Visits temporarily unavailable' : 'No upcoming visits'} kind={visits.unavailable ? 'unavailable' : 'calendar'} description={visits.unavailable ? 'Try again shortly.' : 'New visits will appear here when scheduled.'}/>
             )}
           </div>
         </article>
@@ -235,9 +234,7 @@ export default async function Dashboard({
             </Link>
           ))}
           {!followups.data?.length && (
-            <p className="text-sm text-gray-500">
-              {followups.unavailable ? 'Follow-up information is temporarily unavailable.' : 'No follow-ups are scheduled.'}
-            </p>
+            <EmptyState title={followups.unavailable ? 'Follow-ups temporarily unavailable' : 'No follow-ups scheduled'} kind={followups.unavailable ? 'unavailable' : 'calendar'} description={followups.unavailable ? 'Try again shortly.' : 'Use the calendar action on a lead to schedule a follow-up.'}/>
           )}
         </div>
       </article></>}

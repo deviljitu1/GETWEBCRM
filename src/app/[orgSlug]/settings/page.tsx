@@ -1,5 +1,6 @@
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
 import FormDialog from 'components/crm/FormDialog';
+import { MdManageAccounts } from 'react-icons/md';
 import { requireOrg, checkQuery } from 'utils/crm/access';
 import ActionForm, { Submit } from 'components/crm/ActionForm';
 import { Field, Select, cardClass } from 'components/crm/Fields';
@@ -136,10 +137,7 @@ export default async function Settings({
               {canWrite &&
                 m.user_id !== user.id &&
                 roles.data.find((r) => r.id === m.role_id)?.key !== 'owner' && (
-                  <details className="group">
-                    <summary className="cursor-pointer text-sm font-medium text-brand-500 transition-colors hover:text-brand-600">
-                      Manage access
-                    </summary>
+                  <FormDialog title="Manage member access" icon={<MdManageAccounts/>}>
                     <div className="mt-4">
                       <p className="mb-4 text-sm text-gray-500">
                         Disabling access blocks this member’s workspace data
@@ -147,6 +145,7 @@ export default async function Settings({
                       </p>
                       <ActionForm
                         action={manageMember.bind(null, orgSlug, m.id)}
+                        confirmWhen={{field:'status',value:'disabled',message:'Disable this member’s workspace access? Their assigned leads will remain in the workspace.'}}
                       >
                         <div className="flex flex-col gap-4">
                           <Select
@@ -178,7 +177,7 @@ export default async function Settings({
                         </div>
                       </ActionForm>
                     </div>
-                  </details>
+                  </FormDialog>
                 )}
             </div>
           ))}

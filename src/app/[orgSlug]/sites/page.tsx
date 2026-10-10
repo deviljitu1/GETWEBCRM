@@ -2,6 +2,8 @@ import { loadSiteData, sitePageSize } from 'utils/crm/site-data';
 import { pageNumber } from 'utils/crm/validation';
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
 import FormDialog from 'components/crm/FormDialog';
+import EmptyState from 'components/crm/EmptyState';
+import { MdContentCopy, MdApartment, MdPeopleOutline, MdInventory2, MdPayments, MdChecklist, MdEvent, MdEdit } from 'react-icons/md';
 import Link from 'next/link';
 import { requireOrg } from 'utils/crm/access';
 import { cardClass, Field, Select } from 'components/crm/Fields';
@@ -32,7 +34,7 @@ function Form({ title, action, children, submit = 'Save record' }: {
   children: React.ReactNode; submit?: string;
 }) {
   return <FormDialog title={title} description="Enter the details below. Fields marked * are required.">
-    <ActionForm action={action} reset className="mt-5">
+    <ActionForm action={action} reset repeatable className="mt-5">
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
       <div><Submit>{submit}</Submit></div>
     </ActionForm>
@@ -47,12 +49,45 @@ function ProjectSelect({ projects, optional = false }: { projects: Row[]; option
 }
 
 function Empty({ subject }: { subject: string }) {
-  return <p className="rounded-xl bg-gray-50 p-5 text-sm text-gray-500 dark:bg-navy-900">No {subject} yet. Add your first record when you are ready.</p>;
+  return <EmptyState title={`No ${subject} yet`} description="Add your first record when you are ready." kind={subject.includes('labour') || subject.includes('contractor') ? 'people' : subject.includes('report') ? 'calendar' : 'records'}/>;
+}
+function DuplicateEntry({ slug, type, record, projects, categories = [], contractors = [] }: { slug: string; type: 'expense' | 'daily'; record: Row; projects: Row[]; categories?: Row[]; contractors?: Row[] }) {
+  return <FormDialog title={type === 'expense' ? 'Duplicate expense' : 'Repeat daily report'} icon={<MdContentCopy/>} description="Review this new entry before saving. The date is set to today; upload a new attachment. Nothing is recorded until you save.">
+    <ActionForm action={(type === 'expense' ? addExpense : addDailyReport).bind(null,slug)} reset repeatable>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Date" name={type === 'expense' ? 'expense_date' : 'work_date'} type="date" defaultValue={today()} required/>
+        <Select label="Project / site" name="project_id" defaultValue={record.project_id}>{projects.map(project=><option key={project.id} value={project.id}>{project.name}</option>)}</Select>
+        {type === 'expense' ? <>
+          <Select label="Expense category" name="category_id" defaultValue={record.category_id || ''}><option value="">Other</option>{categories.filter(item=>item.kind==='expense').map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</Select>
+          <Field label="Particular" name="particular" defaultValue={record.particular} maxLength={500} required/>
+          <Field label="Amount (₹)" name="amount" type="number" min="0.01" step="0.01" defaultValue={record.amount} required/>
+          <Field label="Paid by" name="paid_by" defaultValue={record.paid_by || ''} maxLength={160}/>
+          <Select label="Payment mode" name="payment_mode" defaultValue={record.payment_mode}>{['cash','upi','bank','card','other'].map(mode=><option key={mode} value={mode}>{label(mode)}</option>)}</Select>
+          <Field label="Approved by" name="approved_by" maxLength={160}/>
+          <Field label="New bill / receipt" name="receipt" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"/>
+          <Field label="Remarks" name="remarks" defaultValue={record.remarks || ''} maxLength={2000}/>
+        </> : <>
+          <Field label="Work description" name="work_description" defaultValue={record.work_description} maxLength={4000} required/>
+          <Field label="Location / floor" name="location_floor" defaultValue={record.location_floor || ''} maxLength={160}/>
+          <Field label="Labour count" name="labour_count" type="number" min="0" defaultValue={record.labour_count} required/>
+          <Select label="Contractor" name="contractor_id" defaultValue={record.contractor_id || ''}><option value="">None</option>{contractors.map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</Select>
+          <Field label="Material used" name="material_used" defaultValue={record.material_used || ''} maxLength={1000}/>
+          <Field label="Work completed" name="work_completed" maxLength={2000}/>
+          <Field label="Pending work" name="pending_work" defaultValue={record.pending_work || ''} maxLength={2000}/>
+          <Field label="Supervisor" name="supervisor" defaultValue={record.supervisor} maxLength={160} required/>
+          <Field label="New site photo (under 3 MB)" name="photos" type="file" accept="image/jpeg,image/png,image/webp" required/>
+          <Field label="Remarks" name="remarks" maxLength={2000}/>
+        </>}
+      </div><Submit>Save new {type === 'expense' ? 'expense' : 'daily report'}</Submit>
+    </ActionForm>
+  </FormDialog>;
 }
 
 function MetricGroup({ title, items, currency = false }: { title: string; items: [string, unknown][]; currency?: boolean }) {
+  const theme = ({Projects:[MdApartment,'bg-brand-50 text-brand-500'],'Daily work':[MdChecklist,'bg-cyan-50 text-cyan-600'],Materials:[MdInventory2,'bg-orange-50 text-orange-600'],Labour:[MdPeopleOutline,'bg-cyan-50 text-cyan-600'],'Site finance':[MdPayments,'bg-green-50 text-green-600'],Sales:[MdEvent,'bg-brand-50 text-brand-500'],Collections:[MdPayments,'bg-green-50 text-green-600']} as const)[title];
+  const Icon = theme?.[0] || MdChecklist;
   return <section className={cardClass}>
-    <h2 className="text-lg font-bold">{title}</h2>
+    <h2 className="flex items-center gap-3 text-lg font-bold"><span className={`flex h-10 w-10 items-center justify-center rounded-xl ${theme?.[1] || 'bg-blue-50 text-blue-500'}`}><Icon aria-hidden="true" className="text-xl"/></span>{title}</h2>
     <div className="mt-4 grid gap-3 sm:grid-cols-2">
       {items.map(([name,value]) => <div className="rounded-xl bg-gray-50 p-4 dark:bg-navy-900" key={name}>
         <p className="text-xs font-medium text-gray-500">{name}</p>
@@ -180,7 +215,7 @@ export default async function Sites({ params, searchParams }: {
           <p className="mt-1 text-sm text-gray-500">In-charge: {project.site_incharge || '—'} · Supervisor: {project.site_supervisor || '—'}</p>
           <p className="mt-1 text-sm text-gray-500">Start: {project.start_date || '—'} · Target: {project.target_completion_date || '—'}</p>
           {project.pending_work && <p className="mt-2 text-sm">Pending: {project.pending_work}</p>}
-          {canWrite && <details className="mt-4 border-t pt-3 dark:border-navy-600"><summary className="cursor-pointer text-sm font-semibold text-brand-500">Update progress</summary>
+          {canWrite && <div className="mt-4"><FormDialog title={`Update progress — ${project.name}`} triggerLabel="Update progress" icon={<MdEdit/>}>
             <ActionForm action={updateProject.bind(null,orgSlug,project.id)} className="mt-3">
               <Select label="Current stage" name="current_stage" defaultValue={project.current_stage}>{[project.current_stage,...categories.filter(c=>c.kind==='stage').map(c=>c.name)].filter((v,i,a)=>a.indexOf(v)===i).map(name=><option key={name}>{name}</option>)}</Select>
               <Field label="Completed %" name="completed_percent" type="number" step="0.01" min="0" max="100" defaultValue={project.completed_percent} required/>
@@ -188,7 +223,7 @@ export default async function Sites({ params, searchParams }: {
               <Field label="Pending work" name="pending_work" defaultValue={project.pending_work} maxLength={4000}/>
               <Field label="Remarks" name="remarks" defaultValue={project.remarks} maxLength={4000}/><Submit>Save progress</Submit>
             </ActionForm>
-          </details>}
+          </FormDialog></div>}
         </article>)}</div> : <Empty subject="projects"/>}
       </section>
     </>}
@@ -209,6 +244,7 @@ export default async function Sites({ params, searchParams }: {
         {rows.length ? <div className="space-y-2">{rows.map(entry=><article key={entry.id} className="flex flex-wrap items-start justify-between gap-3 rounded-xl border border-gray-200 p-4 dark:border-navy-600">
           <div><h3 className="font-semibold">{entry.particular}</h3><p className="mt-1 text-sm text-gray-500">{projectName(entry.project_id)} · {categoryName(entry.category_id)} · {entry.expense_date}</p><p className="mt-1 text-sm text-gray-500">Paid by {entry.paid_by || '—'} · {label(entry.payment_mode)} · Approved by {entry.approved_by || '—'}</p>{attachment(entry.receipt_path,'View receipt')}</div>
           <p className="text-lg font-bold">{money(entry.amount)}</p>
+          {canWrite && <DuplicateEntry slug={orgSlug} type="expense" record={entry} projects={projects} categories={categories}/>}
         </article>)}</div> : <Empty subject="expenses"/>}
       </section>
     </>}
@@ -227,12 +263,12 @@ export default async function Sites({ params, searchParams }: {
           <p className="mt-1 text-sm text-gray-500">{projectName(task.project_id)} · Assigned: {task.assigned_person || '—'}</p>
           <p className="mt-1 text-sm text-gray-500">Start: {task.start_date || '—'} · Target: {task.target_date || '—'} · Completed: {task.completed_date || '—'}</p>
           {task.remarks && <p className="mt-2 text-sm">{task.remarks}</p>}
-          {canWrite && <details className="mt-3 border-t pt-3 dark:border-navy-600"><summary className="cursor-pointer text-sm font-semibold text-brand-500">Update task</summary>
+          {canWrite && <div className="mt-3"><FormDialog title={`Update task — ${task.title}`} triggerLabel={label(task.status)} icon={<MdChecklist/>}>
             <ActionForm action={updateTask.bind(null,orgSlug,task.id)} className="mt-3">
               <Select label="Status" name="status" defaultValue={task.status}>{['pending','in_progress','completed','delayed','on_hold'].map(status=><option key={status} value={status}>{label(status)}</option>)}</Select>
               <Field label="Remarks" name="remarks" defaultValue={task.remarks} maxLength={2000}/><Submit>Save task</Submit>
             </ActionForm>
-          </details>}
+          </FormDialog></div>}
         </article>)}</div> : <Empty subject="tasks"/>}
       </section>
     </>}
@@ -290,6 +326,7 @@ export default async function Sites({ params, searchParams }: {
           {report.pending_work && <p className="mt-1 text-sm">Pending: {report.pending_work}</p>}
           {report.material_used && <p className="mt-1 text-sm">Material: {report.material_used}</p>}
           <div className="mt-3 flex flex-wrap gap-3">{(report.photo_paths || []).map((path:string,index:number)=><span key={path}>{attachment(path,`Photo ${index+1}`)}</span>)}</div>
+          {canWrite && <div className="mt-3"><DuplicateEntry slug={orgSlug} type="daily" record={report} projects={projects} contractors={contractors}/></div>}
         </article>)}</div> : <Empty subject="daily reports"/>}
       </section>
     </>}

@@ -1,4 +1,5 @@
 'use client';
+import EmptyState from 'components/crm/EmptyState';
 export default function ErrorPage({ reset }: { reset: () => void }) {
-  return <div className="rounded-xl bg-white p-8 dark:bg-navy-800"><h2 className="text-xl font-bold">We could not load this workspace</h2><p className="my-4">Please try again. If the issue continues, contact your administrator.</p><button onClick={reset} className="rounded-lg bg-brand-500 p-3 text-white">Try again</button></div>;
+  return <div className="rounded-2xl bg-white p-5 dark:bg-navy-800"><EmptyState title="We could not load this workspace" kind="unavailable" description="Please try again. If the issue continues, contact your administrator."><button onClick={reset} className="min-h-11 rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500">Try again</button></EmptyState></div>;
 }

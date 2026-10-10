@@ -137,6 +137,72 @@ export async function updateLead(
     return 'Lead updated';
   });
 }
+export async function quickLeadUpdate(slug: string, id: string, _state: ActionState, form: FormData) {
+  const context = await requireWriteOrg(slug);
+  return save(context, async () => {
+    const canAll = context.permissions.has('leads.update.all');
+    if (!canAll && !context.permissions.has('leads.update.assigned')) throw new Error('You do not have permission to update leads.');
+    const kind = text(form, 'kind', 20, true);
+    const changes = kind === 'stage' ? { stage_id: uuid(text(form, 'stage_id', 36, true)) } : kind === 'followup' ? { next_followup_at: dateTime(text(form, 'next_followup_at', 40)) } : null;
+    if (!changes) throw new Error('Invalid update');
+    if (kind === 'stage') {
+      const stage = await context.supabase.from('lead_stages').select('id').eq('organization_id', context.org.id).eq('id', changes.stage_id).maybeSingle();
+      dbError(stage.error); if (!stage.data) throw new Error('Choose a stage from this workspace.');
+    }
+    let query = context.supabase.from('leads').update(changes).eq('organization_id', context.org.id).eq('id', uuid(id));
+    if (!canAll) query = query.eq('assigned_to', context.user.id);
+    const result = await query.select('id').maybeSingle();
+    dbError(result.error); if (!result.data) throw new Error('Lead unavailable or update forbidden');
+    return kind === 'stage' ? 'Lead stage updated' : 'Follow-up updated';
+  });
+}
+export async function bulkLeadStage(slug: string, _state: ActionState, form: FormData) {
+  const context = await requireWriteOrg(slug);
+  return save(context, async () => {
+    const canAll = context.permissions.has('leads.update.all');
+    if (!canAll && !context.permissions.has('leads.update.assigned')) throw new Error('You do not have permission to update leads.');
+    const ids = [...new Set(form.getAll('ids').map(uuid))];
+    if (!ids.length || ids.length > 25) throw new Error('Select between 1 and 25 leads on this page.');
+    const stageId = uuid(text(form, 'stage_id', 36, true));
+    const stage = await context.supabase.from('lead_stages').select('id').eq('organization_id', context.org.id).eq('id', stageId).maybeSingle();
+    dbError(stage.error); if (!stage.data) throw new Error('Choose a stage from this workspace.');
+    let query = context.supabase.from('leads').update({ stage_id: stageId }).eq('organization_id', context.org.id).in('id', ids);
+    if (!canAll) query = query.eq('assigned_to', context.user.id);
+    const result = await query.select('id'); dbError(result.error);
+    return `Updated ${result.data.length} of ${ids.length} selected leads.${result.data.length < ids.length ? ' Some leads are no longer accessible.' : ''}`;
+  });
+}
+export async function editProperty(slug: string, id: string, _state: ActionState, form: FormData) {
+  const context = await requireWriteOrg(slug, 'inventory.manage');
+  return save(context, async () => {
+    const result = await context.supabase.from('property_units').update({
+      project_name: text(form, 'project_name', 160, true), unit_number: text(form, 'unit_number', 80, true),
+      configuration: text(form, 'configuration', 80), price: money(text(form, 'price', 16, true)),
+    }).eq('organization_id', context.org.id).eq('id', uuid(id)).select('id').maybeSingle();
+    dbError(result.error); if (!result.data) throw new Error('Property unavailable or update forbidden');
+    return 'Property updated';
+  });
+}
+export async function bulkPropertyStatus(slug: string, _state: ActionState, form: FormData) {
+  const context = await requireWriteOrg(slug, 'inventory.manage');
+  return save(context, async () => {
+    const ids = [...new Set(form.getAll('ids').map(uuid))];
+    const status = text(form, 'status', 20, true);
+    const allowed = ['available','blocked','sold'];
+    if (!ids.length || ids.length > 25 || !allowed.includes(status)) throw new Error('Select up to 25 properties and a valid status.');
+    const previous = new Map(form.getAll('previous').map(value => {
+      if (typeof value !== 'string') throw new Error('Invalid previous status');
+      const [id, state, extra] = value.split(':'); uuid(id);
+      if (!allowed.includes(state) || extra) throw new Error('Invalid previous status');
+      return [id, state];
+    }));
+    if (ids.some(id => !previous.has(id))) throw new Error('Refresh before updating these properties.');
+    const conditions = ids.map(id => `and(id.eq.${id},status.eq.${previous.get(id)})`).join(',');
+    const result = await context.supabase.from('property_units').update({ status }).eq('organization_id', context.org.id).in('id', ids).or(conditions).select('id');
+    dbError(result.error);
+    return `Updated ${result.data.length} of ${ids.length} selected properties.${result.data.length < ids.length ? ' Some properties changed; refresh before trying again.' : ''}`;
+  });
+}
 export async function addNote(
   slug: string,
   id: string,

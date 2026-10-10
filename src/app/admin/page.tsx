@@ -9,6 +9,7 @@ import {
 import { requirePlatformAdmin, checkQuery } from 'utils/crm/access';
 import { cardClass } from 'components/crm/Fields';
 import { subscriptionSummary } from 'utils/billing/presentation';
+import EmptyState from 'components/crm/EmptyState';
 
 export default async function Dashboard() {
   const { supabase } = await requirePlatformAdmin();
@@ -156,9 +157,7 @@ export default async function Dashboard() {
               </Link>
             ))}
             {!recent.data.length && (
-              <p className="rounded-xl bg-gray-50 p-5 text-sm text-gray-500 dark:bg-navy-900">
-                Create your first organization to begin.
-              </p>
+              <EmptyState title="No organizations yet" description="Create your first organization to begin."/>
             )}
           </div>
         </article>

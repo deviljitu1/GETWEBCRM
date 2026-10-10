@@ -1,5 +1,7 @@
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
 import FormDialog from 'components/crm/FormDialog';
+import EmptyState from 'components/crm/EmptyState';
+import { MdEdit } from 'react-icons/md';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { requireOrg, checkQuery } from 'utils/crm/access';
@@ -92,7 +94,7 @@ export default async function LeadDetail({
         <div className={cardClass}>
           <h2 className="mb-4 text-xl font-bold">Lead information</h2>
           {editable ? (
-            <ActionForm action={updateLead.bind(null, orgSlug, id)}>
+            <FormDialog title={`Edit lead — ${lead.full_name}`} triggerLabel="Edit lead" icon={<MdEdit/>}><ActionForm action={updateLead.bind(null, orgSlug, id)}>
               <Field
                 label="Full name"
                 name="full_name"
@@ -157,7 +159,7 @@ export default async function LeadDetail({
                 defaultValue={lead.next_followup_at}
               />
               <Submit>Save lead</Submit>
-            </ActionForm>
+            </ActionForm></FormDialog>
           ) : (
             <p>
               Stage:{' '}
@@ -187,7 +189,7 @@ export default async function LeadDetail({
                 </div>
               ))}
               {!lead.notes && !activities.data.length && (
-                <p className="text-gray-500">No notes yet.</p>
+                <EmptyState title="No notes yet" description="Add a note to keep a record of the conversation."/>
               )}
             </div>
             {editable && (
@@ -234,7 +236,7 @@ export default async function LeadDetail({
               </div>
             ))}
             {!visits.data.length && (
-              <p className="mb-4 text-gray-500">No visits scheduled.</p>
+              <EmptyState title="No visits scheduled" kind="calendar" description="Schedule a visit when the customer is ready."/>
             )}
             {editable && (
               <FormDialog title="Schedule site visit"><ActionForm action={scheduleVisit.bind(null, orgSlug, id)} reset>
