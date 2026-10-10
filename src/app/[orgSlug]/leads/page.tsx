@@ -1,5 +1,6 @@
 import WorkspaceNavigation from 'components/crm/WorkspaceNavigation';
 import FormDialog from 'components/crm/FormDialog';
+import CsvUpload from 'components/crm/CsvUpload';
 import Form from 'next/form';
 import Link from 'next/link';
 import { requireOrg, checkQuery } from 'utils/crm/access';
@@ -104,20 +105,9 @@ export default async function LeadsPage({
               </div><Submit>Save lead</Submit>
             </ActionForm>
           </FormDialog>
-          <FormDialog title="Import CSV" description="Upload multiple leads in one step.">
-            <p className="my-4 text-sm text-gray-500">
-              Headers: full_name, phone, email, property_interest, city. Only
-              full_name is required. Maximum 500 leads / 1 MB. Duplicate records
-              reject the entire import.
-            </p>
+          <FormDialog title="Import leads" description="Import multiple leads using a CSV file.">
             <ActionForm action={importLeads.bind(null, orgSlug)} reset>
-              <Field
-                label="CSV file"
-                name="file"
-                type="file"
-                accept=".csv,text/csv"
-                required
-              />
+              <CsvUpload/>
               <Submit>Import CSV</Submit>
             </ActionForm>
           </FormDialog>
@@ -145,9 +135,10 @@ export default async function LeadsPage({
             <option value="mine">Assigned to me</option>
             <option value="unassigned">Unassigned</option>
           </Select>
-          <button className="self-end rounded-lg bg-brand-500 p-3 text-white">
+          <div className="flex flex-col gap-2 self-end"><button className="min-h-11 rounded-xl bg-brand-500 p-3 text-white">
             Apply filters
           </button>
+          {(q || stage || owner) && <Link href={`/${orgSlug}/leads`} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-brand-500 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 dark:border-navy-600">Remove filters</Link>}</div>
         </Form>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-sm">

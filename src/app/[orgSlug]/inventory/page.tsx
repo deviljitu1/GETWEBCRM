@@ -131,6 +131,7 @@ export default async function Inventory({
           <button className="inline-flex min-h-11 items-center justify-center gap-2 self-end rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500">
             <MdFilterList aria-hidden="true" className="text-xl"/>Apply filters
           </button>
+          {(q || status) && <Link href={`/${orgSlug}/inventory`} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-brand-500 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 dark:border-navy-600">Remove filters</Link>}
         </Form>
         </details>
         {(q || status) && <div className="mb-4 flex flex-wrap items-center gap-3 text-sm text-gray-700 dark:text-gray-200">{q && <span>Search: {q}</span>}{status && <span className="capitalize">Status: {status}</span>}<Link href={`/${orgSlug}/inventory`} className="font-semibold text-brand-500 underline underline-offset-4">Clear filters</Link></div>}
