@@ -13,9 +13,23 @@ export function Submit({ children, disabled = false, variant = 'primary', repeat
 export default function ActionForm({ action, children, reset = false, repeatable = false, className = '', confirmWhen }: {
   action: FormAction; children: ReactNode; reset?: boolean; repeatable?: boolean; className?: string; confirmWhen?: { field: string; value: string; message: string };
 }) {
-  const [state, formAction] = useActionState(action, {});
+  const submitted = useRef<FormData | null>(null);
+  const [state, formAction] = useActionState(async (previous: ActionState, data: FormData) => {
+    submitted.current = data;
+    return action(previous, data);
+  }, {});
   const ref = useRef<HTMLFormElement>(null);
   const repeat = useRef(false);
+  useEffect(() => {
+    if (!state.error || !submitted.current || !ref.current) return;
+    for (const element of Array.from(ref.current.elements)) {
+      if (!(element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement || element instanceof HTMLSelectElement) || !element.name) continue;
+      if (element instanceof HTMLInputElement && ['file', 'hidden', 'submit', 'password'].includes(element.type)) continue;
+      const values = submitted.current.getAll(element.name);
+      if (element instanceof HTMLInputElement && ['checkbox', 'radio'].includes(element.type)) element.checked = values.includes(element.value);
+      else if (typeof values[0] === 'string') element.value = values[0];
+    }
+  }, [state]);
   useEffect(() => { if (reset && state.message) { ref.current?.reset(); ref.current?.dispatchEvent(new CustomEvent('crm:saved', { bubbles: true, detail: { message: state.message, repeat: repeat.current } })); } }, [reset, state]);
   return <form ref={ref} action={formAction} onSubmit={event => { if (confirmWhen && new FormData(event.currentTarget).get(confirmWhen.field) === confirmWhen.value && !window.confirm(confirmWhen.message)) { event.preventDefault(); return; } repeat.current = (event.nativeEvent as SubmitEvent).submitter?.getAttribute('value') === 'repeat'; }} className={`min-w-0 flex flex-col gap-4 ${className}`}>
     {state.error && <p role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500 dark:bg-navy-900 dark:text-red-300"><MdErrorOutline aria-hidden="true" className="mt-0.5 shrink-0 text-lg"/>{state.error}</p>}

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useId, useRef, useState } from 'react';
-import { MdCloudUpload, MdInfoOutline } from 'react-icons/md';
+import { MdCloudUpload, MdInfoOutline, MdDownload } from 'react-icons/md';
 
 export default function CsvUpload() {
   const input = useRef<HTMLInputElement>(null);
@@ -22,6 +22,10 @@ export default function CsvUpload() {
     return () => form?.removeEventListener('reset', reset);
   }, []);
   return <>
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-100 bg-brand-50 p-3 dark:border-navy-600 dark:bg-navy-900">
+      <p className="text-xs text-navy-700 dark:text-gray-200">Start with the example. Replace the sample rows with your leads, keep the headers, and save as CSV (UTF-8). Keep phone cells as text to preserve + and leading zeros.</p>
+      <a href="/templates/leads-example.csv" download="leads-example.csv" className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-brand-600 hover:bg-brand-100 focus-visible:outline-2 focus-visible:outline-brand-500 dark:bg-navy-800 dark:text-white"><MdDownload aria-hidden="true" className="text-lg"/>Download example CSV</a>
+    </div>
     <div id={helpId} className="flex gap-2 rounded-xl bg-blue-50 p-3 text-xs leading-relaxed text-navy-700 dark:bg-navy-900 dark:text-gray-200"><MdInfoOutline aria-hidden="true" className="mt-0.5 shrink-0 text-lg text-blue-500"/><div><p className="font-semibold">CSV headers: full_name, phone, email, property_interest, city</p><p className="mt-1">Only full_name is required. Maximum 500 leads / 1 MB. Duplicate records reject the entire import.</p></div></div>
     <div className="relative flex flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-brand-200 bg-gray-50 px-4 py-8 text-center focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 dark:border-navy-500 dark:bg-navy-900" onDragOver={event => event.preventDefault()} onDrop={event => {
       event.preventDefault();

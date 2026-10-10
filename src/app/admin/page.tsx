@@ -10,6 +10,7 @@ import { requirePlatformAdmin, checkQuery } from 'utils/crm/access';
 import { cardClass } from 'components/crm/Fields';
 import { subscriptionSummary } from 'utils/billing/presentation';
 import EmptyState from 'components/crm/EmptyState';
+import AdminHistory from 'components/crm/AdminHistory';
 
 export default async function Dashboard() {
   const { supabase } = await requirePlatformAdmin();
@@ -61,6 +62,7 @@ export default async function Dashboard() {
   ];
   return (
     <div className="flex flex-col gap-6 pb-8">
+      <AdminHistory/>
       <section className="overflow-hidden rounded-[24px] bg-gradient-to-br from-brand-700 via-brand-600 to-blueSecondary p-6 text-white shadow-xl sm:p-8">
         <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div>

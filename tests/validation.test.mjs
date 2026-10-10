@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { validSlug, uuid, email, phone, money, dateTime, safeNext, pageNumber, parseCsv } from '../src/utils/crm/validation.ts';
 
 test('redirects remain same-origin and reject protocol-relative or backslash URLs', () => {
@@ -27,6 +28,20 @@ test('CSV imports support BOM, quotes, commas and multiline fields', () => {
 test('CSV imports reject malformed, oversized and unexpected schemas', () => {
   for (const value of ['email\na@example.com','full_name,full_name\nA,B','full_name,role\nA,admin','full_name\n"A','full_name\n"A"B','full_name,email\nA','full_name\n']) assert.throws(()=>parseCsv(value));
   assert.throws(()=>parseCsv('full_name\n'+Array(501).fill('A').join('\n')));
+});
+
+test('downloadable lead example matches importer headers and field validation', () => {
+  const csv = readFileSync(new URL('../public/templates/leads-example.csv', import.meta.url), 'utf8');
+  const rows = parseCsv(csv);
+  assert.equal(rows.length, 2);
+  assert.deepEqual(Object.keys(rows[0]), ['full_name', 'phone', 'email', 'property_interest', 'city']);
+  for (const row of rows) {
+    assert.ok(row.full_name.trim() && row.full_name.length <= 160);
+    phone(row.phone);
+    email(row.email);
+    assert.ok(row.phone.length <= 40 && row.email.length <= 254 && row.property_interest.length <= 160 && row.city.length <= 100);
+  }
+  assert.equal(rows[1].property_interest, 'Plot, residential');
 });
 test('pagination and date inputs are bounded', () => {
   assert.equal(pageNumber('0'),1);assert.equal(pageNumber('-1'),1);assert.equal(pageNumber('10'),10);assert.equal(pageNumber('Infinity'),1);

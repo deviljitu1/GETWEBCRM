@@ -6,6 +6,7 @@ import EmptyState from 'components/crm/EmptyState';
 import { MdContentCopy, MdApartment, MdPeopleOutline, MdInventory2, MdPayments, MdChecklist, MdEvent, MdEdit } from 'react-icons/md';
 import Link from 'next/link';
 import { requireOrg } from 'utils/crm/access';
+import ReorderableCards from 'components/crm/ReorderableCards';
 import { cardClass, Field, Select } from 'components/crm/Fields';
 import ActionForm, { Submit } from 'components/crm/ActionForm';
 import ReadOnlyNotice from 'components/crm/ReadOnlyNotice';
@@ -106,7 +107,7 @@ export default async function Sites({ params, searchParams }: {
   const requested = filters.view;
   const page = pageNumber(filters.page), secondaryPage = pageNumber(filters.secondaryPage), contractorPage = pageNumber(filters.contractorPage);
   const view: View = views.some(([key]) => key === requested) ? requested as View : 'dashboard';
-  const { supabase, org, canWrite: paidAccess, permissions } = await requireOrg(orgSlug,'sites.read');
+  const { supabase, org, user, canWrite: paidAccess, permissions } = await requireOrg(orgSlug,'sites.read');
   const canWrite = paidAccess && permissions.has('sites.manage');
   const { primary, secondary: extra, categories, projects, contractors, materials, bookings, summary } =
     await loadSiteData(supabase, org.id, view, canWrite, page, secondaryPage);
@@ -140,7 +141,7 @@ export default async function Sites({ params, searchParams }: {
     </nav>
     {!paidAccess && <ReadOnlyNotice orgSlug={orgSlug} />}
 
-    {view === 'dashboard' && <div className="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
+    {view === 'dashboard' && <ReorderableCards storageKey={`crm:site-layout:${user.id}:${org.id}`} labels={['Projects','Site work','Materials','Labour','Site finance','Sales','Collections']}>
       <MetricGroup title="Projects" items={[["Total projects",summary.projects],["Active sites",summary.active_sites],["Completed sites",summary.completed_sites],["Delayed sites",summary.delayed_sites]]} />
       <MetricGroup title="Site work" items={[["Today's reports",summary.today_reports],["Completed tasks",summary.completed_tasks],["Pending tasks",summary.pending_tasks],["Delayed tasks",summary.delayed_tasks]]} />
       <MetricGroup title="Materials" items={[["Materials in stock",summary.stock_available],["Low-stock items",summary.low_stock]]} />
@@ -148,7 +149,7 @@ export default async function Sites({ params, searchParams }: {
       <MetricGroup title="Site finance" currency items={[["Today's expenses",summary.today_expenses],["Total site expenses",summary.site_expenses],["Contractor payments",summary.contractor_payments],["Material purchase value",summary.material_payments]]} />
       <MetricGroup title="Sales" items={[["Leads",summary.leads],["Follow-ups today",summary.followups],["Site visits",summary.visits],["Bookings",summary.bookings]]} />
       <MetricGroup title="Collections" currency items={[["Collected",summary.collection],["Outstanding",summary.outstanding]]} />
-    </div>}
+    </ReorderableCards>}
 
     {view === 'dashboard' && <section className={cardClass}>
       <h2 className="text-lg font-bold">Daily checks and detailed reports</h2>

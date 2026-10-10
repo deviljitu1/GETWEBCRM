@@ -5,10 +5,10 @@ import EmptyState from 'components/crm/EmptyState';
 import RecordMenu from 'components/crm/RecordMenu';
 import RecordDetails from 'components/crm/RecordDetails';
 import BulkRecordActions from 'components/crm/BulkRecordActions';
-import FilterChips from 'components/crm/FilterChips';
+import FilterPopover from 'components/crm/FilterPopover';
 import DateTimeField from 'components/crm/DateTimeField';
 import { MdEvent, MdEdit, MdFlag } from 'react-icons/md';
-import Form from 'next/form';
+
 import Link from 'next/link';
 import { requireOrg, checkQuery } from 'utils/crm/access';
 import { pageNumber } from 'utils/crm/validation';
@@ -102,7 +102,7 @@ export default async function LeadsPage({
                 required
                 maxLength={160}
               />
-              <Field label="Phone" name="phone" type="tel" maxLength={40} />
+              <Field label="Phone" name="phone" type="tel" maxLength={40} pattern="[+0-9 ().\-]*" title="Enter a phone number using digits, spaces, +, parentheses, dots or hyphens." />
               <Field label="Email" name="email" type="email" maxLength={254} />
               <Field
                 label="Project interest"
@@ -122,7 +122,7 @@ export default async function LeadsPage({
         </div>
       )}
       <div className={cardClass}>
-        <Form key={`${q}:${stage}:${owner}`} action={`/${orgSlug}/leads`} className="mb-5 grid gap-3 md:grid-cols-4">
+        <FilterPopover key={`${q}:${stage}:${owner}`} action={`/${orgSlug}/leads`} activeCount={Number(Boolean(q)) + Number(Boolean(stage)) + Number(Boolean(owner))}>
           <Field
             label="Search"
             name="q"
@@ -143,12 +143,7 @@ export default async function LeadsPage({
             <option value="mine">Assigned to me</option>
             <option value="unassigned">Unassigned</option>
           </Select>
-          <div className="flex flex-col gap-2 self-end"><button className="min-h-11 rounded-xl bg-brand-500 p-3 text-white">
-            Apply filters
-          </button>
-          {(q || stage || owner) && <Link href={`/${orgSlug}/leads`} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-brand-500 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 dark:border-navy-600">Remove filters</Link>}</div>
-        </Form>
-        <FilterChips base={`/${orgSlug}/leads`} filters={[{key:'q',label:`Search: ${q}`,value:q},{key:'stage',label:`Stage: ${stages.data.find(item=>item.id===stage)?.name || ''}`,value:stage},{key:'owner',label:owner==='mine'?'Assigned to me':'Unassigned',value:owner}]}/>
+        </FilterPopover>
         {canWrite && result.data.some(lead => permissions.has('leads.update.all') || (permissions.has('leads.update.assigned') && lead.assigned_to === user.id)) && <BulkRecordActions action={bulkLeadStage.bind(null,orgSlug)} options={stages.data} field="stage_id" subject="leads" records={result.data.filter(lead=>permissions.has('leads.update.all') || (permissions.has('leads.update.assigned') && lead.assigned_to===user.id)).map(lead=>({id:lead.id,name:lead.full_name}))}/>}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-sm">

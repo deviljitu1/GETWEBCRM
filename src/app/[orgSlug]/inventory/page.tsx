@@ -3,9 +3,9 @@ import FormDialog from 'components/crm/FormDialog';
 import RecordMenu from 'components/crm/RecordMenu';
 import RecordDetails from 'components/crm/RecordDetails';
 import EmptyState from 'components/crm/EmptyState';
-import FilterChips from 'components/crm/FilterChips';
+import FilterPopover from 'components/crm/FilterPopover';
 import BulkRecordActions from 'components/crm/BulkRecordActions';
-import Form from 'next/form';
+
 import Link from 'next/link';
 import { requireOrg, checkQuery } from 'utils/crm/access';
 import { pageNumber } from 'utils/crm/validation';
@@ -13,7 +13,7 @@ import ActionForm, { Submit } from 'components/crm/ActionForm';
 import { Field, Select, cardClass } from 'components/crm/Fields';
 import { addProperty, updateProperty, editProperty, bulkPropertyStatus } from '../actions';
 import ReadOnlyNotice from 'components/crm/ReadOnlyNotice';
-import { MdApartment, MdCheckCircleOutline, MdSchedule, MdLocalOffer, MdFilterList, MdSearch, MdEdit } from 'react-icons/md';
+import { MdApartment, MdCheckCircleOutline, MdSchedule, MdLocalOffer, MdSearch, MdEdit } from 'react-icons/md';
 export default async function Inventory({
   params,
   searchParams,
@@ -116,9 +116,7 @@ export default async function Inventory({
         </FormDialog>
       )}
       <div className={cardClass}>
-        <details key={`${q}:${status}`} className="mb-5">
-          <summary className="inline-flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-gray-200 bg-brand-50 px-5 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden"><MdFilterList aria-hidden="true" className="text-xl"/>Apply filters{(q || status) && <span className="rounded-full bg-brand-500 px-2 py-0.5 text-xs text-white">{Number(Boolean(q)) + Number(Boolean(status))}</span>}</summary>
-        <Form action={`/${orgSlug}/inventory`} className="mt-4 grid gap-4 rounded-xl border border-gray-200 p-4 dark:border-navy-600 md:grid-cols-[1.5fr_1fr_0.75fr]">
+        <FilterPopover key={`${q}:${status}`} action={`/${orgSlug}/inventory`} activeCount={Number(Boolean(q)) + Number(Boolean(status))}>
           <div className="relative"><Field
             label="Project or unit"
             name="q"
@@ -134,13 +132,7 @@ export default async function Inventory({
               </option>
             ))}
           </Select>
-          <button className="inline-flex min-h-11 items-center justify-center gap-2 self-end rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500">
-            <MdFilterList aria-hidden="true" className="text-xl"/>Apply filters
-          </button>
-          {(q || status) && <Link href={`/${orgSlug}/inventory`} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-gray-200 px-3 py-2 text-sm font-semibold text-brand-500 hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500 dark:border-navy-600">Remove filters</Link>}
-        </Form>
-        </details>
-        <FilterChips base={`/${orgSlug}/inventory`} filters={[{key:'q',label:`Search: ${q}`,value:q},{key:'status',label:`Status: ${status}`,value:status}]}/>
+        </FilterPopover>
         {canWrite && permissions.has('inventory.manage') && result.data.length > 0 && <BulkRecordActions action={bulkPropertyStatus.bind(null,orgSlug)} field="status" subject="properties" options={['available','blocked','sold'].map(status=>({id:status,name:status.charAt(0).toUpperCase()+status.slice(1)}))} records={result.data.map(unit=>({id:unit.id,name:`${unit.project_name} · ${unit.unit_number}`,previous:unit.status}))}/>}
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px] text-left text-sm">

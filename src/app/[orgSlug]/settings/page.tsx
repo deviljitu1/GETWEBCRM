@@ -20,7 +20,7 @@ export default async function Settings({
     orgSlug,
     'settings.manage',
   );
-  const [members, roles, invitations, audit] = await Promise.all([
+  const [members, roles, invitations] = await Promise.all([
     supabase
       .from('organization_members')
       .select('id,user_id,role_id,status')
@@ -32,14 +32,8 @@ export default async function Settings({
       .eq('organization_id', org.id)
       .is('accepted_at', null)
       .gt('expires_at', new Date().toISOString()),
-    supabase
-      .from('audit_logs')
-      .select('id,entity_type,action,changed_fields,created_at')
-      .eq('organization_id', org.id)
-      .order('created_at', { ascending: false })
-      .limit(25),
   ]);
-  [members, roles, invitations, audit].forEach((r) => checkQuery(r.error));
+  [members, roles, invitations].forEach((r) => checkQuery(r.error));
   const profiles = members.data.length
     ? await supabase
         .from('profiles')
@@ -231,31 +225,6 @@ export default async function Settings({
           )}
 
         </div>
-      </div>
-      <div className={cardClass}>
-        <h2 className="mb-6 text-xl font-bold text-navy-700 dark:text-white">
-          Recent audit history
-        </h2>
-        {audit.data.map((a) => (
-          <p
-            key={a.id}
-            className="border-b border-gray-100 py-3 text-sm last:border-0 dark:border-navy-700"
-          >
-            <span className="font-semibold text-navy-700 dark:text-white">
-              {a.entity_type}
-            </span>
-            : {a.action}{' '}
-            <span className="text-gray-500">
-              · {a.changed_fields.join(', ')} ·{' '}
-              {new Date(a.created_at).toLocaleString('en-IN', {
-                timeZone: 'Asia/Kolkata',
-              })}
-            </span>
-          </p>
-        ))}
-        {!audit.data.length && (
-          <p className="text-gray-500">No recorded changes.</p>
-        )}
       </div>
     </div>
   );
