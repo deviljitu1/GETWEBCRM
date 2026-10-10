@@ -91,7 +91,10 @@ test('separate request scopes cannot reuse another users organization or grants'
   await assert.rejects(second.requireOrg('tenant-b','settings.manage'),/NOT_FOUND/);
 });
 
-test('billing lookup failures still fail closed',async()=>{
+test('billing lookup failures allow verified reads but fail closed for writes',async()=>{
   const dal=await access({rpcError:{code:'unavailable'}});
-  await assert.rejects(dal.requireOrg('tenant-a'),/Unable to verify subscription access/);
+  const context=await dal.requireOrg('tenant-a');
+  assert.equal(context.canWrite,false);
+  assert.equal(context.billingVerified,false);
+  await assert.rejects(dal.requireWriteOrg('tenant-a','leads.create'),/read-only/);
 });

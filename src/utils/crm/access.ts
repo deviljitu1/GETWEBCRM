@@ -42,14 +42,16 @@ const resolveOrg = cache(async (slug: string) => {
     membership.data
       ? supabase.from('role_permissions').select('permission_key').eq('role_id', membership.data.role_id)
       : Promise.resolve(null),
-    supabase.rpc('billing_access', { org_id: org.id }),
+    Promise.resolve(supabase.rpc('billing_access', { org_id: org.id }))
+      .catch(() => ({ data: false, error: { code: 'unavailable' } })),
   ]);
   if (grants?.error) throw new Error('Unable to verify permissions');
   const permissions = new Set<string>(membership.data
     ? (grants?.data || []).map((row) => row.permission_key)
     : ['leads.read.all', 'inventory.read', 'sites.read']);
-  if (billing.error) throw new Error('Unable to verify subscription access');
-  return { supabase, user, org, permissions, canWrite: Boolean(membership.data) && billing.data === true };
+  if (billing.error) console.error('Workspace billing lookup failed', { code: billing.error.code });
+  return { supabase, user, org, permissions, billingVerified: !billing.error,
+    canWrite: Boolean(membership.data) && !billing.error && billing.data === true };
 });
 
 export async function requireOrg(slug: string, permission?: string) {

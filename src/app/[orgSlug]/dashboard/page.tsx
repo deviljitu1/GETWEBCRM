@@ -8,7 +8,8 @@ import {
   MdPersonAdd,
   MdTrendingUp,
 } from 'react-icons/md';
-import { requireOrg, checkQuery } from 'utils/crm/access';
+import { requireOrg } from 'utils/crm/access';
+import { loadDashboardData } from 'utils/crm/dashboard-data';
 import { cardClass } from 'components/crm/Fields';
 import ReadOnlyNotice from 'components/crm/ReadOnlyNotice';
 
@@ -20,28 +21,9 @@ export default async function Dashboard({
   const { orgSlug } = await params;
   const { supabase, org, permissions, canWrite, user } = await requireOrg(orgSlug);
   const showLeads = canReadLeads(permissions);
-  const [summary, followups, visits, profile] = await Promise.all([
-    supabase.rpc('workspace_summary', { org_id: org.id }),
-    showLeads ? supabase
-      .from('leads')
-      .select('id,full_name,next_followup_at')
-      .eq('organization_id', org.id)
-      .not('next_followup_at', 'is', null)
-      .order('next_followup_at')
-      .limit(10) : Promise.resolve({ data: [], error: null }),
-    showLeads ? supabase
-      .from('site_visits')
-      .select('id,lead_id,scheduled_at,status,leads(full_name)')
-      .eq('organization_id', org.id)
-      .eq('status', 'scheduled')
-      .gte('scheduled_at', new Date().toISOString())
-      .order('scheduled_at')
-      .limit(10) : Promise.resolve({ data: [], error: null }),
-    supabase.from('profiles').select('full_name').eq('id', user.id).single(),
-  ]);
-  [summary, followups, visits].forEach((r) => checkQuery(r.error));
+  const { summary, followups, visits, profile } = await loadDashboardData(supabase, org.id, user.id, showLeads);
   const userName = profile.data?.full_name || user.email?.split('@')[0] || 'User';
-  const data = summary.data;
+  const data = summary.data || {};
 
   const metrics = [
     ...(showLeads ? [{
@@ -54,7 +36,7 @@ export default async function Dashboard({
     {
       label: 'Overdue follow-ups',
       value: data.overdue,
-      detail: data.overdue ? 'Needs attention today' : 'Everything is on track',
+      detail: summary.unavailable ? 'Temporarily unavailable' : data.overdue ? 'Needs attention today' : 'Everything is on track',
       icon: MdTrendingUp,
       accent: 'bg-orange-500',
     },
@@ -106,6 +88,10 @@ export default async function Dashboard({
         </div>
       </section>
       {!canWrite && <ReadOnlyNotice orgSlug={orgSlug} />}
+      {(summary.unavailable || followups.unavailable || visits.unavailable) && <section role="status" className={cardClass}>
+        <p className="font-semibold">Some dashboard information is temporarily unavailable.</p>
+        <p className="mt-2 text-sm text-gray-500">You can continue navigating your workspace. Refresh this page to retry.</p>
+      </section>}
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map((metric) => {
           const Icon = metric.icon;
@@ -120,7 +106,7 @@ export default async function Dashboard({
                     {metric.label}
                   </p>
                   <p className="mt-2 text-3xl font-bold text-navy-700 dark:text-white">
-                    {metric.value}
+                    {metric.value ?? '—'}
                   </p>
                 </div>
                 <span
@@ -151,7 +137,8 @@ export default async function Dashboard({
             </Link>
           </div>
           <div className="space-y-3">
-            {data.pipeline.map((stage: { name: string; total: number }) => (
+            {summary.unavailable && <p className="text-sm text-gray-500">Pipeline information is temporarily unavailable.</p>}
+            {(data.pipeline || []).map((stage: { name: string; total: number }) => (
               <div key={stage.name} className="flex items-center gap-4">
                 <span className="w-28 truncate text-sm font-medium">
                   {stage.name}
@@ -182,7 +169,7 @@ export default async function Dashboard({
             <h2 className="mt-1 text-xl font-bold">Upcoming site visits</h2>
           </div>
           <div className="space-y-3">
-            {visits.data.map((visit: any) => (
+            {(visits.data || []).map((visit: any) => (
               <Link
                 className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 p-3 transition-colors hover:bg-brand-50 dark:bg-navy-900 dark:hover:bg-navy-700"
                 key={visit.id}
@@ -203,9 +190,9 @@ export default async function Dashboard({
                 <MdArrowForward className="shrink-0 text-brand-500" />
               </Link>
             ))}
-            {!visits.data.length && (
+            {!visits.data?.length && (
               <p className="rounded-xl bg-gray-50 p-5 text-sm text-gray-500 dark:bg-navy-900">
-                No upcoming visits. New visits will appear here.
+                {visits.unavailable ? 'Visit information is temporarily unavailable.' : 'No upcoming visits. New visits will appear here.'}
               </p>
             )}
           </div>
@@ -227,7 +214,7 @@ export default async function Dashboard({
           </Link>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
-          {followups.data.map((lead) => (
+          {(followups.data || []).map((lead: { id: string; full_name: string; next_followup_at: string }) => (
             <Link
               className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 p-4 transition-colors hover:border-brand-200 hover:bg-brand-50 dark:border-navy-700 dark:hover:bg-navy-700"
               key={lead.id}
@@ -247,9 +234,9 @@ export default async function Dashboard({
               <MdArrowForward className="text-brand-500" />
             </Link>
           ))}
-          {!followups.data.length && (
+          {!followups.data?.length && (
             <p className="text-sm text-gray-500">
-              No follow-ups are scheduled.
+              {followups.unavailable ? 'Follow-up information is temporarily unavailable.' : 'No follow-ups are scheduled.'}
             </p>
           )}
         </div>

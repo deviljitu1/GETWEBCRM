@@ -3,7 +3,7 @@ import { requireOrg } from 'utils/crm/access';
 import { MdLockOutline } from 'react-icons/md';
 
 export default async function ReadOnlyNotice({ orgSlug }: { orgSlug: string }) {
-  const { permissions } = await requireOrg(orgSlug);
+  const { permissions, billingVerified } = await requireOrg(orgSlug);
   const managesBilling = permissions.has('settings.manage');
   return (
     <section className="text-amber-950 flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between">
@@ -12,7 +12,9 @@ export default async function ReadOnlyNotice({ orgSlug }: { orgSlug: string }) {
         <div>
           <p className="font-semibold">Read-only workspace</p>
           <p className="mt-1 text-sm">
-            You can view the areas permitted by your role. Changes require an active subscription and the appropriate role.
+            {billingVerified
+              ? 'You can view the areas permitted by your role. Changes require an active subscription and the appropriate role.'
+              : 'You can continue viewing your workspace. Subscription verification is temporarily unavailable, so changes are paused. Please try again shortly.'}
             {!managesBilling && ' Contact your workspace administrator for access or billing help.'}
           </p>
         </div>
